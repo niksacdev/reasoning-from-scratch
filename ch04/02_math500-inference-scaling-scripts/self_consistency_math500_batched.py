@@ -23,7 +23,7 @@ from reasoning_from_scratch.ch04 import (
     top_p_filter,
     scale_logits_by_temperature,
 )
-from reasoning_from_scratch.qwen3 import KVCache
+from reasoning_from_scratch.lfm3 import KVCache
 
 
 @torch.inference_mode()

@@ -394,7 +394,7 @@ if __name__ == "__main__":
     if not api_key:
         raise SystemExit(
             "MiniMax API key missing. Set MINIMAX_API_KEY.\n"
-            "Get your API key at: https://platform.minimaxi.com/"
+            "Get your API key at: https://platform.minimax.io/"
         )
     if args.num_processes < 1:
         raise SystemExit("--num_processes must be >= 1.")

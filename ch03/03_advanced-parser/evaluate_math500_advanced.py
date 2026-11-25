@@ -1,3 +1,4 @@
+from reasoning_from_scratch.lfm3 import load_state_dict_file
 # Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt)
 # Source for "Build a Reasoning Model (From Scratch)": https://mng.bz/lZ5B
 # Code repository: https://github.com/rasbt/reasoning-from-scratch
@@ -10,9 +11,9 @@ import time
 import torch
 
 import reasoning_from_scratch.bonus as bonus
-from reasoning_from_scratch.qwen3 import (
-    Qwen3Model,
-    QWEN_CONFIG_06_B
+from reasoning_from_scratch.lfm3 import (
+    LFM3Model,
+    LFM3_CONFIG_1_7B
 )
 from reasoning_from_scratch.ch02 import get_device
 from reasoning_from_scratch.ch03 import (
@@ -182,8 +183,8 @@ if __name__ == "__main__":
     if args.checkpoint_path:
         # To load the saved RL checkpoint files from chapter 6
         tokenizer = load_tokenizer_only(which_model=which_model)
-        model = Qwen3Model(QWEN_CONFIG_06_B)
-        state_dict = torch.load(args.checkpoint_path, map_location="cpu")
+        model = LFM3Model(LFM3_CONFIG_1_7B)
+        state_dict = load_state_dict_file(args.checkpoint_path, map_location="cpu")
         model.load_state_dict(state_dict)
         model.to(device)
         if args.compile:

@@ -1,3 +1,19 @@
+## LFM3 edition
+
+All active chapters use [LiquidAI/LFM3-1.7B-Base](https://huggingface.co/LiquidAI/LFM3-1.7B-Base) as the candidate for GRPO, supervised fine-tuning and distillation. Start with the [migration and training guide](LFM3.md).
+
+```bash
+python -m pip install -e .
+python ch02/05_use_model/generate_simple.py --max_new_tokens 64
+python ch03/02_math500-verifier-scripts/evaluate_math500.py --dataset_size 10
+```
+
+The PyTorch implementation includes LFM3's convolution, sliding attention and global attention layers. Downloads pin both weights and tokenizer to revision `7bca5038823c0d0f14efe06439109354a10e014c`. The `reasoning` option changes prompting on the same base weights; training produces our reasoning candidate. Original Qwen scores, screenshots and CSV logs remain historical reference data. Cleared notebook outputs must be regenerated for LFM3.
+
+The model weights use the LFM Open License v1.0. The repository's Apache-2.0 license covers its code. Legacy Qwen modules remain importable for compatibility, but chapter entry points use LFM3.
+
+---
+
 # Build A Reasoning Model (From Scratch)
 
 This repository contains the code for developing an LLM reasoning model and is the official code repository for the book [*Build a Reasoning Model (From Scratch)*](https://mng.bz/lZ5B).
@@ -63,7 +79,7 @@ git clone --depth 1 https://github.com/rasbt/reasoning-from-scratch.git
 | Ch 8: Distilling Reasoning Models for Efficient Reasoning   | - [ch08_main.ipynb](ch08/01_main-chapter-code/ch08_main.ipynb)<br/>- [ch08_exercise-solutions.ipynb](ch08/01_main-chapter-code/ch08_exercise-solutions.ipynb) |
 | Appendix A: References and Further Reading                  | No code                                                      |
 | Appendix B: Exercise Solutions                              | Code and solutions are in each chapter's subfolder           |
-| Appendix C: Qwen3 LLM Source Code                           | - [chC_main.ipynb](chC/01_main-chapter-code/chC_main.ipynb)  |
+| Appendix C: LFM3 LLM Source Code                           | - [chC_main.ipynb](chC/01_main-chapter-code/chC_main.ipynb)  |
 | Appendix D: Using larger LLMs                               | - [chD_main.ipynb](chD/chD_main.ipynb)                       |
 | Appendix E: Batching and throughput-oriented execution      | - [chE_main.ipynb](chE/chE_main.ipynb)                       |
 | Appendix F: Common Approaches to LLM Evaluation             | - [chF_main.ipynb](chF/01_main-chapter-code/chF_main.ipynb)  |
@@ -87,7 +103,7 @@ The mental model below summarizes the main techniques covered in this book.
 
 Please note that *Build A Reasoning Model (From Scratch)* is a standalone book focused on methods to improve LLM reasoning.
 
-In this book, we work with a pre-trained open-source base LLM (Qwen3) on top of which we code apply reasoning methods from scratch. This includes inference-time scaling, reinforcement learning, and distillation.
+This edition starts from LiquidAI/LFM3-1.7B-Base and applies reasoning methods from scratch. The upstream book uses Qwen3. This includes inference-time scaling, reinforcement learning, and distillation.
 
 However, if you are interested in understanding how a conventional base LLM is implemented, you may like my previous book, [*Build a Large Language Model (From Scratch)*](https://amzn.to/4fqvn0D).
 
@@ -140,7 +156,7 @@ Several folders contain optional materials as a bonus for interested readers:
   - [Generate distillation data](ch08/02_generate_distillation_data) (teacher-output generation via Ollama or OpenRouter)
   - [Train with distillation](ch08/04_train_with_distillation) (including single-example and batched distillation scripts)
   - [Download training checkpoints](ch08/05_download_training_checkpoints) (how to download and use the chapter 8 distillation checkpoints)
-  - [Use Qwen3 with Hugging Face](ch08/06_use_via_huggingface) (how to use the base model and chapter 6-8 checkpoints with `transformers`)
+  - [Use LFM3 with Hugging Face](ch08/06_use_via_huggingface) (how to use the base model and chapter 6-8 checkpoints with `transformers`)
 - **Appendix F: Common Approaches to LLM Evaluation**
   - [MMLU Evaluation Methods](chF/02_mmlu)
   - [LLM leaderboards](chF/03_leaderboards)

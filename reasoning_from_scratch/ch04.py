@@ -4,7 +4,7 @@
 
 from .ch02 import generate_text_basic_stream_cache
 from .ch03 import extract_final_candidate
-from .qwen3 import KVCache
+from .lfm3 import KVCache
 
 from collections import Counter
 import torch

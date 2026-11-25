@@ -14,7 +14,7 @@ The input and output JSON formats are the same as the ones documented in the [ma
 &nbsp;
 ## MiniMax setup
 
-1. Create an account at [MiniMax Platform](https://platform.minimaxi.com/)
+1. Create an account at [MiniMax Platform](https://platform.minimax.io/)
 2. Generate an API key under your account settings
 3. Save the API key in a secure location (e.g., a password manager)
 

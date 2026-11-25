@@ -1,3 +1,4 @@
+from reasoning_from_scratch.lfm3 import load_state_dict_file
 # Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt)
 # Source for "Build a Reasoning Model (From Scratch)": https://mng.bz/lZ5B
 # Code repository: https://github.com/rasbt/reasoning-from-scratch
@@ -8,22 +9,22 @@ import torch
 from transformers import GenerationMixin, PreTrainedModel, PretrainedConfig
 from transformers.modeling_outputs import CausalLMOutputWithPast
 
-from reasoning_from_scratch.qwen3 import (
-    QWEN_CONFIG_06_B,
-    Qwen3Model,
-    Qwen3Tokenizer,
-    download_qwen3_small,
+from reasoning_from_scratch.lfm3 import (
+    LFM3_CONFIG_1_7B,
+    LFM3Model,
+    LFM3Tokenizer,
+    download_lfm3,
 )
 
 
 MODEL_FILENAMES = {
-    "base": "qwen3-0.6B-base.pth",
-    "reasoning": "qwen3-0.6B-reasoning.pth",
+    "base": "model.safetensors",
+    "reasoning": "model.safetensors",
 }
 
 TOKENIZER_FILENAMES = {
-    "base": "tokenizer-base.json",
-    "reasoning": "tokenizer-reasoning.json",
+    "base": "tokenizer.json",
+    "reasoning": "tokenizer.json",
 }
 
 
@@ -33,75 +34,80 @@ def _dtype_to_name(dtype_value):
     return dtype_value
 
 
-def _qwen_cfg_to_jsonable(model_cfg):
+def _lfm3_cfg_to_jsonable(model_cfg):
     model_cfg = dict(model_cfg)
     model_cfg["dtype"] = _dtype_to_name(model_cfg["dtype"])
     return model_cfg
 
 
-def _qwen_cfg_from_jsonable(model_cfg):
+def _lfm3_cfg_from_jsonable(model_cfg):
     model_cfg = dict(model_cfg)
     if isinstance(model_cfg["dtype"], str):
         model_cfg["dtype"] = getattr(torch, model_cfg["dtype"])
     return model_cfg
 
 
-class Qwen3LocalWrapperConfig(PretrainedConfig):
-    model_type = "qwen3_local_wrapper"
+class LFM3LocalWrapperConfig(PretrainedConfig):
+    model_type = "lfm3_local_wrapper"
 
     def __init__(
         self,
-        qwen_cfg=None,
+        lfm3_cfg=None,
         tokenizer_kind="base",
         pad_token_id=None,
         eos_token_id=None,
         **kwargs,
     ):
-        if qwen_cfg is None:
-            qwen_cfg = dict(QWEN_CONFIG_06_B)
+        if lfm3_cfg is None:
+            lfm3_cfg = dict(LFM3_CONFIG_1_7B)
 
-        self.qwen_cfg = _qwen_cfg_to_jsonable(qwen_cfg)
+        self.lfm3_cfg = _lfm3_cfg_to_jsonable(lfm3_cfg)
         self.tokenizer_kind = tokenizer_kind
-        self.vocab_size = qwen_cfg["vocab_size"]
-        self.hidden_size = qwen_cfg["emb_dim"]
-        self.num_attention_heads = qwen_cfg["n_heads"]
-        self.num_key_value_heads = qwen_cfg["n_kv_groups"]
-        self.num_hidden_layers = qwen_cfg["n_layers"]
-        self.max_position_embeddings = qwen_cfg["context_length"]
+        self.vocab_size = lfm3_cfg["vocab_size"]
+        self.hidden_size = lfm3_cfg["emb_dim"]
+        self.num_attention_heads = lfm3_cfg["n_heads"]
+        self.num_key_value_heads = lfm3_cfg["n_kv_groups"]
+        self.num_hidden_layers = lfm3_cfg["n_layers"]
+        self.max_position_embeddings = lfm3_cfg["context_length"]
         kwargs.pop("tie_word_embeddings", None)
+        kwargs.pop("dtype", None)
+        kwargs.pop("use_cache", None)
 
         super().__init__(
             pad_token_id=pad_token_id,
             eos_token_id=eos_token_id,
-            dtype=self.qwen_cfg["dtype"],
+            dtype=self.lfm3_cfg["dtype"],
             use_cache=False,
-            tie_word_embeddings=False,
+            tie_word_embeddings=True,
             **kwargs,
         )
 
 
-class Qwen3LocalWrapperForCausalLM(PreTrainedModel, GenerationMixin):
-    config_class = Qwen3LocalWrapperConfig
+class LFM3LocalWrapperForCausalLM(PreTrainedModel, GenerationMixin):
+    _tied_weights_keys = {"model.lm_head.weight": "model.model.embed_tokens.weight"}
+    config_class = LFM3LocalWrapperConfig
     main_input_name = "input_ids"
 
     def __init__(self, config):
         super().__init__(config)
-        self.model = Qwen3Model(_qwen_cfg_from_jsonable(config.qwen_cfg))
+        self.model = LFM3Model(_lfm3_cfg_from_jsonable(config.lfm3_cfg))
         self.generation_config.pad_token_id = config.pad_token_id
         self.generation_config.eos_token_id = config.eos_token_id
         self.generation_config.use_cache = False
+        self.post_init()
 
     def get_input_embeddings(self):
         return self.model.tok_emb
 
     def set_input_embeddings(self, value):
-        self.model.tok_emb = value
+        self.model.model.embed_tokens = value
+        self.model.lm_head.weight = value.weight
 
     def get_output_embeddings(self):
-        return self.model.out_head
+        return self.model.lm_head
 
     def set_output_embeddings(self, new_embeddings):
-        self.model.out_head = new_embeddings
+        self.model.lm_head = new_embeddings
 
     def forward(
         self,
@@ -112,11 +118,11 @@ class Qwen3LocalWrapperForCausalLM(PreTrainedModel, GenerationMixin):
         return_dict=None,
         **kwargs,
     ):
-        del attention_mask, use_cache, kwargs
+        del use_cache, kwargs
         if input_ids is None:
             raise ValueError("input_ids must be provided.")
 
-        logits = self.model(input_ids)
+        logits = self.model(input_ids, attn_mask=attention_mask)
 
         loss = None
         if labels is not None:
@@ -143,16 +149,16 @@ class Qwen3LocalWrapperForCausalLM(PreTrainedModel, GenerationMixin):
         attention_mask=None,
         **kwargs,
     ):
-        del attention_mask, kwargs
+        del kwargs
         # This wrapper keeps things simple and recomputes from the full prefix
         # during generation instead of adapting the scratch KV cache to HF's
         # cache classes.
-        return {"input_ids": input_ids, "use_cache": False}
+        return {"input_ids": input_ids, "attention_mask": attention_mask, "use_cache": False}
 
 
-def build_tokenizer(tokenizer_kind="base", tokenizer_path=None, local_dir="qwen3"):
+def build_tokenizer(tokenizer_kind="base", tokenizer_path=None, local_dir="lfm3"):
     if tokenizer_path is None:
-        download_qwen3_small(
+        download_lfm3(
             kind=tokenizer_kind,
             tokenizer_only=True,
             out_dir=local_dir,
@@ -162,21 +168,21 @@ def build_tokenizer(tokenizer_kind="base", tokenizer_path=None, local_dir="qwen3
         tokenizer_path = Path(tokenizer_path)
 
     if tokenizer_kind == "reasoning":
-        return Qwen3Tokenizer(
+        return LFM3Tokenizer(
             tokenizer_file_path=tokenizer_path,
             apply_chat_template=True,
             add_generation_prompt=True,
             add_thinking=True,
         )
 
-    return Qwen3Tokenizer(tokenizer_file_path=tokenizer_path)
+    return LFM3Tokenizer(tokenizer_file_path=tokenizer_path)
 
 
 def build_model(
     tokenizer_kind="base",
     model_path=None,
     tokenizer=None,
-    local_dir="qwen3",
+    local_dir="lfm3",
 ):
     if tokenizer is None:
         tokenizer = build_tokenizer(
@@ -185,7 +191,7 @@ def build_model(
         )
 
     if model_path is None:
-        download_qwen3_small(
+        download_lfm3(
             kind=tokenizer_kind,
             tokenizer_only=False,
             out_dir=local_dir,
@@ -195,17 +201,17 @@ def build_model(
         model_path = Path(model_path)
 
     try:
-        state_dict = torch.load(model_path, map_location="cpu", weights_only=True)
+        state_dict = load_state_dict_file(model_path, map_location="cpu", weights_only=True)
     except TypeError:
-        state_dict = torch.load(model_path, map_location="cpu")
+        state_dict = load_state_dict_file(model_path, map_location="cpu")
 
-    config = Qwen3LocalWrapperConfig(
-        qwen_cfg=QWEN_CONFIG_06_B,
+    config = LFM3LocalWrapperConfig(
+        lfm3_cfg=LFM3_CONFIG_1_7B,
         tokenizer_kind=tokenizer_kind,
         pad_token_id=tokenizer.pad_token_id,
         eos_token_id=tokenizer.eos_token_id,
     )
-    model = Qwen3LocalWrapperForCausalLM(config)
+    model = LFM3LocalWrapperForCausalLM(config)
     model.model.load_state_dict(state_dict)
     return model
 
@@ -214,7 +220,7 @@ def build_model_and_tokenizer(
     tokenizer_kind="base",
     model_path=None,
     tokenizer_path=None,
-    local_dir="qwen3",
+    local_dir="lfm3",
 ):
     tokenizer = build_tokenizer(
         tokenizer_kind=tokenizer_kind,

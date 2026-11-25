@@ -162,8 +162,9 @@ def test_load_reasoning_tokenizer_downloads_and_configures_tokenizer(
                 "add_thinking": add_thinking,
             }
 
-    monkeypatch.setattr(ch08, "download_qwen3_small", fake_download_qwen3_small)
-    monkeypatch.setattr(ch08, "Qwen3Tokenizer", FakeTokenizer)
+    from reasoning_from_scratch import lfm3
+    monkeypatch.setattr(lfm3, "download_lfm3", fake_download_qwen3_small)
+    monkeypatch.setattr(lfm3, "LFM3Tokenizer", FakeTokenizer)
 
     tokenizer = ch08.load_reasoning_tokenizer(local_dir=tmp_path)
 
@@ -174,7 +175,7 @@ def test_load_reasoning_tokenizer_downloads_and_configures_tokenizer(
         "out_dir": tmp_path,
     }
     assert calls["tokenizer"] == {
-        "tokenizer_file_path": tmp_path / "tokenizer-reasoning.json",
+        "tokenizer_file_path": tmp_path / "tokenizer.json",
         "apply_chat_template": True,
         "add_generation_prompt": True,
         "add_thinking": True,
@@ -188,7 +189,7 @@ def test_load_reasoning_tokenizer_downloads_and_configures_tokenizer(
 def test_load_reasoning_tokenizer_real_download(tmp_path):
     tokenizer = ch08.load_reasoning_tokenizer(local_dir=tmp_path)
 
-    assert (tmp_path / "tokenizer-reasoning.json").exists()
+    assert (tmp_path / "tokenizer.json").exists()
     assert tokenizer.eos_token == "<|im_end|>"
     assert len(tokenizer.encode("Explain large language models.")) > 0
 

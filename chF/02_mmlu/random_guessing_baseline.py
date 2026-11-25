@@ -11,10 +11,10 @@ from datasets import load_dataset
 
 
 # Gold letter is MMLU jargon for correct answer letter
-def gold_letter(ans):
-    if isinstance(ans, int):
-        return "ABCD"[ans]
-    s = str(ans).strip().upper()
+def gold_letter(answer):
+    if isinstance(answer, int):
+        return "ABCD"[answer]
+    s = str(answer).strip().upper()
     return s if s in {"A", "B", "C", "D"} else s[:1]
 
 

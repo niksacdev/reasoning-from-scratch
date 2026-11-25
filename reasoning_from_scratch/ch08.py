@@ -13,9 +13,8 @@ import requests
 import torch
 
 from .ch03 import render_prompt
-from .qwen3 import (
-    Qwen3Tokenizer,
-    download_qwen3_small,
+from .lfm3 import (
+    load_tokenizer_only,
 )
 
 
@@ -83,20 +82,8 @@ def format_distilled_answer(entry):
     return f"<think>{thinking}</think>\n\n{content}"
 
 
-def load_reasoning_tokenizer(local_dir="qwen3"):
-    download_qwen3_small(
-        kind="reasoning", tokenizer_only=True, out_dir=local_dir
-    )
-
-    tokenizer_path = Path(local_dir) / "tokenizer-reasoning.json"
-    tokenizer = Qwen3Tokenizer(
-        tokenizer_file_path=tokenizer_path,
-        apply_chat_template=True,
-        add_generation_prompt=True,
-        add_thinking=True,
-    )
-
-    return tokenizer
+def load_reasoning_tokenizer(local_dir="lfm3"):
+    return load_tokenizer_only("reasoning", local_dir)
 
 
 def build_examples(data, tokenizer):
@@ -303,7 +290,7 @@ def save_checkpoint(model, checkpoint_dir, step, suffix=""):
 
     ckpt_path = (
         checkpoint_dir /
-        f"qwen3-0.6B-distill-step{step:05d}{suffix}.pth"
+        f"lfm3-1.7B-distill-step{step:05d}{suffix}.pth"
     )
     torch.save(model.state_dict(), ckpt_path)
     return ckpt_path

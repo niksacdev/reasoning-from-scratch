@@ -172,7 +172,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def generate_with_qwen3(model, tokenizer, prompt, device, max_new_tokens):
+def generate_with_lfm3(model, tokenizer, prompt, device, max_new_tokens):
     input_ids = torch.tensor(
         tokenizer.encode(prompt),
         device=device
@@ -208,7 +208,7 @@ if __name__ == "__main__":
     print("Device:", device)
     dev_name = str(device).replace(":", "-")
 
-    # Data and local Qwen3 model
+    # Data and local LFM3 model
     math_data = get_data()
     pairs = prepare_math500_pairs(math_data)
     if not pairs:
@@ -237,8 +237,8 @@ if __name__ == "__main__":
         instruction = ex["instruction"]
         reference = ex["reference_answer"]
 
-        # 1) Candidate answer from local Qwen3 (base or reasoning)
-        answer = generate_with_qwen3(
+        # 1) Candidate answer from local LFM3 (base or reasoning)
+        answer = generate_with_lfm3(
             candidate_model, tokenizer, instruction, device, max_new_tokens
         ).strip()
 
@@ -261,7 +261,7 @@ if __name__ == "__main__":
                 "model_answer": answer,
                 "judge_text": judge_out,
                 "score": score,
-                "candidate_model": f"qwen3-{which_model}",
+                "candidate_model": f"LiquidAI/LFM3-1.7B-Base ({which_model} prompting)",
                 "judge_model": args.judge_model,
             }
         )

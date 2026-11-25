@@ -1,4 +1,6 @@
 
+
+LFM3 edition: executable examples use the LFM3 base candidate. Historical Qwen tables and sample output below are reference results; they do not measure LFM3.
 # MMLU Benchmarking
 
 This bonus material implements three different methods for evaluating models on MMLU. 
@@ -56,7 +58,7 @@ uv add datasets
 ➜  02_mmlu git:(main) ✗ uv run 1_letter_matching.py --which_model base     
 Using Apple Silicon GPU (MPS)
 Using device: mps
-✓ qwen3/qwen3-0.6B-base.pth already up-to-date
+✓ qwen3/lfm3-1.7B-base.pth already up-to-date
 ✓ qwen3/tokenizer-base.json already up-to-date
 MMLU 50 acc=0.240 [high_school_mathematics]
 MMLU 100 acc=0.200 [high_school_mathematics]
@@ -72,7 +74,7 @@ MMLU letter accuracy: 58/270 = 21.48% in 69.1s
 ➜  02_mmlu git:(main) ✗ uv run 1_letter_matching.py --which_model reasoning
 Using Apple Silicon GPU (MPS)
 Using device: mps
-qwen3-0.6B-reasoning.pth: 100% (1433 MiB / 1433 MiB)
+lfm3-1.7B-reasoning.pth: 100% (1433 MiB / 1433 MiB)
 tokenizer-reasoning.json: 100% (10 MiB / 10 MiB)
 MMLU 50 acc=0.220 [high_school_mathematics]
 MMLU 100 acc=0.230 [high_school_mathematics]
@@ -104,7 +106,7 @@ MMLU letter accuracy: 57/270 = 21.11% in 43.6s
 ➜  02_mmlu git:(main) ✗ uv run 2_logprob.py --which_model base 
 Using Apple Silicon GPU (MPS)
 Using device: mps
-✓ qwen3/qwen3-0.6B-base.pth already up-to-date
+✓ qwen3/lfm3-1.7B-base.pth already up-to-date
 ✓ qwen3/tokenizer-base.json already up-to-date
 MMLU 50 acc=0.360 [high_school_mathematics]
 MMLU 100 acc=0.420 [high_school_mathematics]
@@ -120,7 +122,7 @@ MMLU letter accuracy (log-prob): 93/270 = 34.44% in 22.5s
 ➜  02_mmlu git:(main) ✗ uv run 2_logprob.py --which_model reasoning
 Using Apple Silicon GPU (MPS)
 Using device: mps
-✓ qwen3/qwen3-0.6B-reasoning.pth already up-to-date
+✓ qwen3/lfm3-1.7B-reasoning.pth already up-to-date
 ✓ qwen3/tokenizer-reasoning.json already up-to-date
 MMLU 50 acc=0.220 [high_school_mathematics]
 MMLU 100 acc=0.230 [high_school_mathematics]
@@ -153,7 +155,7 @@ MMLU letter accuracy (log-prob): 57/270 = 21.11% in 22.4s
 ➜  02_mmlu git:(main) ✗ uv run 3_teacher_forcing.py --which_model base 
 Using Apple Silicon GPU (MPS)
 Using device: mps
-✓ qwen3/qwen3-0.6B-base.pth already up-to-date
+✓ qwen3/lfm3-1.7B-base.pth already up-to-date
 ✓ qwen3/tokenizer-base.json already up-to-date
 MMLU 50 acc=0.360 [high_school_mathematics]
 MMLU 100 acc=0.310 [high_school_mathematics]
@@ -169,7 +171,7 @@ MMLU letter accuracy (teacher-forced): 86/270 = 31.85% in 67.9s
 ➜  02_mmlu git:(main) ✗ uv run 3_teacher_forcing.py --which_model reasoning
 Using Apple Silicon GPU (MPS)
 Using device: mps
-✓ qwen3/qwen3-0.6B-reasoning.pth already up-to-date
+✓ qwen3/lfm3-1.7B-reasoning.pth already up-to-date
 ✓ qwen3/tokenizer-reasoning.json already up-to-date
 MMLU 50 acc=0.240 [high_school_mathematics]
 MMLU 100 acc=0.250 [high_school_mathematics]

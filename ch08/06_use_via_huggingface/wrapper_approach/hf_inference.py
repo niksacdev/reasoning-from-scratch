@@ -16,7 +16,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description=(
             "Run local Hugging Face-style generation via a thin wrapper around "
-            "the scratch Qwen3Model. This does not require exporting a model folder."
+            "the scratch LFM3Model. This does not require exporting a model folder."
         ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
@@ -42,7 +42,7 @@ def parse_args():
     parser.add_argument(
         "--local_dir",
         type=str,
-        default="qwen3",
+        default="lfm3",
         help="Download/cache directory for the model and tokenizer.",
     )
     parser.add_argument(

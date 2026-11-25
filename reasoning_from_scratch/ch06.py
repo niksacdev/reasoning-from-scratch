@@ -2,7 +2,7 @@
 # Source for "Build a Reasoning Model (From Scratch)": https://mng.bz/lZ5B
 # Code repository: https://github.com/rasbt/reasoning-from-scratch
 
-from .qwen3 import KVCache
+from .lfm3 import KVCache
 from .ch03 import (
     extract_final_candidate, grade_answer, render_prompt
 )
@@ -193,7 +193,7 @@ def save_checkpoint(model, checkpoint_dir, step, suffix=""):
     suffix = f"-{suffix}" if suffix else ""
     ckpt_path = (
         checkpoint_dir /
-        f"qwen3-0.6B-rlvr-grpo-step{step:05d}{suffix}.pth"
+        f"lfm3-1.7B-rlvr-grpo-step{step:05d}{suffix}.pth"
     )
     torch.save(model.state_dict(), ckpt_path)
     return ckpt_path

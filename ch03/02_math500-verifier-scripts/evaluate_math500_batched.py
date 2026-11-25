@@ -1,3 +1,4 @@
+from reasoning_from_scratch.lfm3 import load_state_dict_file
 
 # Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt)
 # Source for "Build a Reasoning Model (From Scratch)": https://mng.bz/lZ5B
@@ -12,9 +13,9 @@ from pathlib import Path
 
 import torch
 
-from reasoning_from_scratch.qwen3_batched import (
-    Qwen3Model,
-    QWEN_CONFIG_06_B
+from reasoning_from_scratch.lfm3_batched import (
+    LFM3Model,
+    LFM3_CONFIG_1_7B
 )
 from reasoning_from_scratch.ch02 import get_device
 from reasoning_from_scratch.ch03 import (
@@ -25,7 +26,7 @@ from reasoning_from_scratch.ch03 import (
     eta_progress_message,
     load_tokenizer_only
 )
-from reasoning_from_scratch.qwen3_batched import (
+from reasoning_from_scratch.lfm3_batched import (
     load_model_and_tokenizer,
 )
 
@@ -196,11 +197,11 @@ if __name__ == "__main__":
     args = parse_args()
 
     if args.disable_efficient_mode:
-        from reasoning_from_scratch.qwen3_batched import (
+        from reasoning_from_scratch.lfm3_batched import (
             generate_text_basic_batched_cache,
         )
     else:
-        from reasoning_from_scratch.qwen3_batched import (
+        from reasoning_from_scratch.lfm3_batched import (
             generate_text_basic_batched_cache_stop as generate_text_basic_batched_cache,
         )
     if args.device == "auto":
@@ -227,9 +228,9 @@ if __name__ == "__main__":
     if args.checkpoint_path:
         # To load the saved RL checkpoint files from chapter 6
         tokenizer = load_tokenizer_only(which_model=which_model)
-        model = Qwen3Model(QWEN_CONFIG_06_B)
+        model = LFM3Model(LFM3_CONFIG_1_7B)
         model.to(device)
-        state_dict = torch.load(args.checkpoint_path, map_location=device)
+        state_dict = load_state_dict_file(args.checkpoint_path, map_location=device)
         model.load_state_dict(state_dict)
         if args.compile:
             torch._dynamo.config.allow_unspec_int_on_nn_module = True

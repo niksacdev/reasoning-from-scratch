@@ -1,4 +1,6 @@
 
+
+LFM3 edition: executable examples use the LFM3 base candidate. Historical Qwen tables and sample output below are reference results; they do not measure LFM3.
 # LLM-as-a-judge
 
 This bonus material implements an LLM-as-a-judge approach, where gpt-oss:20b (via the open-source Ollama library) evaluates Qwen3 0.6B base and reasoning variants on MATH-500.
@@ -94,7 +96,7 @@ options:
 Using Apple Silicon GPU (MPS)
 Model: base
 Device: mps
-✓ qwen3/qwen3-0.6B-base.pth already up-to-date
+✓ qwen3/lfm3-1.7B-base.pth already up-to-date
 ✓ qwen3/tokenizer-base.json already up-to-date
 Ollama running: True
 [1/10] score=5
@@ -121,7 +123,7 @@ Counts: 1:2 2:0 3:2 4:0 5:6
 Using Apple Silicon GPU (MPS)
 Model: reasoning
 Device: mps
-✓ qwen3/qwen3-0.6B-reasoning.pth already up-to-date
+✓ qwen3/lfm3-1.7B-reasoning.pth already up-to-date
 ✓ qwen3/tokenizer-reasoning.json already up-to-date
 Ollama running: True
 [1/10] score=5

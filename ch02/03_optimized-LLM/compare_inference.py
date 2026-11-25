@@ -1,3 +1,4 @@
+from reasoning_from_scratch.lfm3 import load_state_dict_file
 # Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt)
 # Source for "Build a Reasoning Model (From Scratch)": https://mng.bz/lZ5B
 # Code repository: https://github.com/rasbt/reasoning-from-scratch
@@ -12,17 +13,17 @@ from reasoning_from_scratch.ch02 import (
     get_device,
     generate_stats
 )
-from reasoning_from_scratch.qwen3 import (
-    download_qwen3_small,
-    Qwen3Tokenizer,
-    QWEN_CONFIG_06_B
+from reasoning_from_scratch.lfm3 import (
+    download_lfm3,
+    LFM3Tokenizer,
+    LFM3_CONFIG_1_7B
 )
 
 
 ############################
 # Parse command-line args
 ############################
-parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, description="Run Qwen3 text generation")
+parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, description="Run LFM3 text generation")
 parser.add_argument(
     "--device",
     type=str,
@@ -45,27 +46,27 @@ parser.add_argument(
 parser.add_argument(
     "--reasoning",
     action="store_true",
-    help="Use reasoning model variant."
+    help="Use chat prompting with the same LFM3 base weights."
 )
 
 parser.add_argument(
     "--optimized",
     action="store_true",
-    help="Use reasoning model variant."
+    help="Compatibility flag: LFM3 already uses scaled dot product attention."
 )
 
 
 args = parser.parse_args()
 
 if args.optimized:
-    from reasoning_from_scratch.qwen3_optimized import Qwen3Model
+    from reasoning_from_scratch.lfm3 import LFM3Model
 else:
-    from reasoning_from_scratch.qwen3 import Qwen3Model
+    from reasoning_from_scratch.lfm3 import LFM3Model
 
 
 if args.cache:
     if args.optimized:
-        from reasoning_from_scratch.qwen3_optimized import generate_text_basic_cache as generate_text
+        from reasoning_from_scratch.ch02 import generate_text_basic_cache as generate_text
         is_streaming_generate = False
     else:
         from reasoning_from_scratch.ch02 import generate_text_basic_stream_cache as generate_text
@@ -82,10 +83,10 @@ device = torch.device(args.device) if args.device else get_device()
 #########################
 
 if args.reasoning:
-    download_qwen3_small(kind="reasoning", tokenizer_only=False, out_dir="qwen3")
-    tokenizer_path = Path("qwen3") / "tokenizer-reasoning.json"
-    model_path = Path("qwen3") / "qwen3-0.6B-reasoning.pth"
-    tokenizer = Qwen3Tokenizer(
+    download_lfm3(kind="reasoning", tokenizer_only=False, out_dir="lfm3")
+    tokenizer_path = Path("lfm3") / "tokenizer.json"
+    model_path = Path("lfm3") / "model.safetensors"
+    tokenizer = LFM3Tokenizer(
         tokenizer_file_path=tokenizer_path,
         apply_chat_template=True,
         add_generation_prompt=True,
@@ -93,13 +94,13 @@ if args.reasoning:
     )
 
 else:
-    download_qwen3_small(kind="base", tokenizer_only=False, out_dir="qwen3")
-    tokenizer_path = Path("qwen3") / "tokenizer-base.json"
-    model_path = Path("qwen3") / "qwen3-0.6B-base.pth"
-    tokenizer = Qwen3Tokenizer(tokenizer_file_path=tokenizer_path)
+    download_lfm3(kind="base", tokenizer_only=False, out_dir="lfm3")
+    tokenizer_path = Path("lfm3") / "tokenizer.json"
+    model_path = Path("lfm3") / "model.safetensors"
+    tokenizer = LFM3Tokenizer(tokenizer_file_path=tokenizer_path)
 
-model = Qwen3Model(QWEN_CONFIG_06_B)
-model.load_state_dict(torch.load(model_path, map_location=device))
+model = LFM3Model(LFM3_CONFIG_1_7B)
+model.load_state_dict(load_state_dict_file(model_path, map_location=device))
 
 model.to(device)
 

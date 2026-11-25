@@ -1,3 +1,4 @@
+from reasoning_from_scratch.lfm3 import load_state_dict_file
 
 # Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt)
 # Source for "Build a Reasoning Model (From Scratch)": https://mng.bz/lZ5B
@@ -135,7 +136,7 @@ def save_checkpoint(model, checkpoint_dir, step, suffix=""):
     checkpoint_dir = Path(checkpoint_dir)
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     suffix = f"-{suffix}" if suffix else ""
-    checkpoint_path = checkpoint_dir / f"qwen3-0.6B-distill-step{step:05d}{suffix}.pth"
+    checkpoint_path = checkpoint_dir / f"lfm3-1.7B-distill-step{step:05d}{suffix}.pth"
     torch.save(model.state_dict(), checkpoint_path)
     return checkpoint_path
 
@@ -306,7 +307,7 @@ def split_data(data, validation_size=25, seed=123):
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Simple distillation into Qwen3 0.6B (example-by-example).",
+        description="Simple distillation into LFM3 1.7B (example-by-example).",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
@@ -418,7 +419,7 @@ def main():
     tokenizer_variant = "reasoning" if args.use_think_tokens else "base"
     tokenizer = load_tokenizer_only(which_model=tokenizer_variant)
     if checkpoint_path is not None:
-        state_dict = torch.load(checkpoint_path, map_location="cpu")
+        state_dict = load_state_dict_file(checkpoint_path, map_location="cpu")
         model.load_state_dict(state_dict)
 
     print("Model variant: base")

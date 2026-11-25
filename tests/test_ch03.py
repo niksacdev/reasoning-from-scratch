@@ -30,7 +30,7 @@ skip_expensive = os.environ.get("SKIP_EXPENSIVE", "0") == "1"
 
 def test_load_math500_test_has_500_entries():
     repo_root = Path(__file__).resolve().parent.parent
-    local_path = repo_root / "math500_test.json"
+    local_path = repo_root / "ch03/01_main-chapter-code/math500_test.json"
 
     data = ch03.load_math500_test(local_path=local_path, save_copy=False)
 
@@ -58,8 +58,8 @@ def test_load_math500_test_real_download(tmp_path):
 @pytest.mark.parametrize(
     ("which_model", "expected_name", "expected_eos"),
     [
-        ("base", "tokenizer-base.json", "<|endoftext|>"),
-        ("reasoning", "tokenizer-reasoning.json", "<|im_end|>"),
+        ("base", "tokenizer.json", "<|im_end|>"),
+        ("reasoning", "tokenizer.json", "<|im_end|>"),
     ],
 )
 def test_load_tokenizer_only_real_download(
@@ -74,7 +74,7 @@ def test_load_tokenizer_only_real_download(
 
 def test_math500_parser_self_answers():
     repo_root = Path(__file__).resolve().parent.parent
-    local_path = repo_root / "math500_test.json"
+    local_path = repo_root / "ch03/01_main-chapter-code/math500_test.json"
 
     math_data = ch03.load_math500_test(local_path=local_path, save_copy=False)
 
@@ -87,7 +87,7 @@ def test_math500_parser_self_answers():
 
 def test_math500_parser_boxed_answers():
     repo_root = Path(__file__).resolve().parent.parent
-    local_path = repo_root / "math500_test.json"
+    local_path = repo_root / "ch03/01_main-chapter-code/math500_test.json"
 
     math_data = ch03.load_math500_test(local_path=local_path, save_copy=False)
 
@@ -102,7 +102,7 @@ def test_math500_parser_boxed_answers():
 
 def test_math500_parser_boxed_constant_mismatch():
     repo_root = Path(__file__).resolve().parent.parent
-    local_path = repo_root / "math500_test.json"
+    local_path = repo_root / "ch03/01_main-chapter-code/math500_test.json"
 
     math_data = ch03.load_math500_test(local_path=local_path, save_copy=False)
 
@@ -363,7 +363,7 @@ def test_render_prompt():
         assert got.endswith("Answer:")
 
 
-def test_evaluate_math500_stream(tmp_path, monkeypatch, qwen3_weights_path):
+def test_evaluate_math500_stream(tmp_path, monkeypatch):
 
     outputs = iter([
         "Reasoning...\n\\boxed{A}",
@@ -380,10 +380,7 @@ def test_evaluate_math500_stream(tmp_path, monkeypatch, qwen3_weights_path):
         {"problem": "Compute #2", "answer": "B"},
     ]
 
-    tokenizer = ch03.load_tokenizer_only(
-        which_model="base",
-        local_dir=qwen3_weights_path,
-    )
+    tokenizer = DummyTokenizer()
 
     out_path = tmp_path / "math500-test.jsonl"
     num_correct, num_examples, acc = ch03.evaluate_math500_stream(

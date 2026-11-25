@@ -3,6 +3,7 @@
 # Code repository: https://github.com/rasbt/reasoning-from-scratch
 
 import csv
+import shutil
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -10,11 +11,20 @@ import requests
 import torch
 
 
-THINK_TOKEN_ID = 151667
-END_THINK_TOKEN_ID = 151668
+THINK_TOKEN_ID = 124901
+END_THINK_TOKEN_ID = 124902
 
 
 def download_from_github(rel_path, out=None):
+    local_source = Path(__file__).resolve().parents[1] / rel_path
+    if str(rel_path).endswith(".py"):
+        if not local_source.is_file():
+            raise FileNotFoundError("Run this example from the LFM3 repository checkout")
+        target = Path(out) if out is not None else Path(rel_path).name
+        if local_source.resolve() != Path(target).resolve():
+            shutil.copyfile(local_source, target)
+        return Path(target)
+
     github_raw_base = (  # Base URL
         "https://raw.githubusercontent.com/rasbt/"
         "reasoning-from-scratch/refs/heads/main/"
@@ -143,8 +153,8 @@ def sequence_logprob_and_entropy(model, token_ids, prompt_len):
 def reward_format(
     token_ids,
     prompt_len,
-    start_think_id=151667,
-    end_think_id=151668,
+    start_think_id=124901,
+    end_think_id=124902,
 ):
     try:
         gen = token_ids[prompt_len:].tolist()

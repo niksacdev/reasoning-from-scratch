@@ -1,3 +1,11 @@
+# LFM3 edition troubleshooting
+
+Use `python -m pip install -e .` from this checkout so imports resolve to the migrated package. Weights and tokenizer download from [LiquidAI/LFM3-1.7B-Base](https://huggingface.co/LiquidAI/LFM3-1.7B-Base) into `lfm3/`; clear incomplete downloads there if necessary. LFM3 cannot load the original Qwen training checkpoints. Reduce sequence length or batch size when training exceeds memory. Hugging Face exports require `transformers>=5.23.0` and `accelerate`.
+
+The original upstream troubleshooting notes below describe Qwen files and reference hardware measurements.
+
+---
+
 # Troubleshooting Guide
 
 This page collects common issues and setup tips encountered while working through the book.

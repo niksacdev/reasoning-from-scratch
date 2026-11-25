@@ -13,21 +13,14 @@ from reasoning_from_scratch.ch03 import render_prompt
 
 def wrap_prompt(prompt, tokenizer, tokenizer_kind):
     if tokenizer_kind == "reasoning":
-        messages = [{"role": "user", "content": prompt}]
-        if getattr(tokenizer, "chat_template", None):
-            return tokenizer.apply_chat_template(
-                messages,
-                tokenize=False,
-                add_generation_prompt=True,
-            )
-        return f"<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n"
-
+        return (f"{tokenizer.bos_token}<|im_start|>user\n{prompt}<|im_end|>\n"
+                "<|im_start|>assistant\n")
     return prompt
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Run a converted Qwen3 Hugging Face model with model.generate(...).",
+        description="Run a converted LFM3 Hugging Face model with model.generate(...).",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
