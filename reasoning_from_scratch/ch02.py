@@ -2,7 +2,7 @@
 # Source for "Build a Reasoning Model (From Scratch)": https://mng.bz/lZ5B
 # Code repository: https://github.com/rasbt/reasoning-from-scratch
 
-from .qwen3 import KVCache
+from .lfm3 import KVCache
 import warnings
 import torch
 

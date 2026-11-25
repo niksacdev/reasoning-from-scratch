@@ -1,38 +1,23 @@
-# Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt)
-# Source for "Build a Reasoning Model (From Scratch)": https://mng.bz/lZ5B
-# Code repository: https://github.com/rasbt/reasoning-from-scratch
+"""The appendix teaches the same LFM3 implementation used in the chapters."""
 
-import os
 from pathlib import Path
-import sys
+
 import torch
-import pytest
 
-from reasoning_from_scratch.ch02 import (
-    generate_text_basic,
-    generate_text_basic_cache,
-)
-# Local imports
-from test_qwen3 import check_model_generation
 from conftest import import_definitions_from_notebook
+from reasoning_from_scratch.ch02 import generate_text_basic, generate_text_basic_cache
+from reasoning_from_scratch.lfm3 import LFM3_CONFIG_1_7B
 
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-
-
-nb_path = ROOT / "chC" / "01_main-chapter-code" / "chC_main.ipynb"
-mod = import_definitions_from_notebook(nb_path, "chC_chC_main_defs")
-Qwen3Model = getattr(mod, "Qwen3Model")
-
-# Make CI more reproducible & robust
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["OMP_NUM_THREADS"] = "1"
-torch.backends.mkldnn.enabled = False
-torch.set_num_threads(1)
-torch.use_deterministic_algorithms(True)
-
-
-@pytest.mark.parametrize("generate_fn", [generate_text_basic, generate_text_basic_cache])
-def test_model_here_too(generate_fn):
-    check_model_generation(Qwen3Model, generate_fn)
+def test_appendix_generation_with_and_without_cache():
+    root = Path(__file__).resolve().parents[1]
+    mod = import_definitions_from_notebook(root / "chC/01_main-chapter-code/chC_main.ipynb", "chC_defs")
+    cfg = dict(LFM3_CONFIG_1_7B, vocab_size=32, emb_dim=16, hidden_dim=32,
+               n_heads=2, n_kv_groups=1, head_dim=8, n_layers=3,
+               layer_types=("conv", "sliding_attention", "full_attention"),
+               dtype=torch.float32, sliding_window=4)
+    model = mod.LFM3Model(cfg)
+    ids = torch.tensor([[1, 2, 3]])
+    plain = generate_text_basic(model, ids, max_new_tokens=6)
+    cached = generate_text_basic_cache(model, ids, max_new_tokens=6)
+    torch.testing.assert_close(plain, cached)

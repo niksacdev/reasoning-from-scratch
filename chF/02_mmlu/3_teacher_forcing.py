@@ -107,8 +107,8 @@ def evaluate_mmlu_teacher_forced(
                 model, tokenizer, prompt_fmt, prompt, prompt_ids, ex
             )
 
-            ans = ex["answer"]
-            gold = "ABCD"[ans] if isinstance(ans, int) else str(ans).strip().upper()
+            answer = ex["answer"]
+            gold = "ABCD"[answer] if isinstance(answer, int) else str(answer).strip().upper()
 
             total += 1
             correct += int(pred == gold)

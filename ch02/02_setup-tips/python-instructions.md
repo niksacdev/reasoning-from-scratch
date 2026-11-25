@@ -29,10 +29,10 @@ To install new packages, as needed, (for example, PyTorch and Jupyter Lab), run:
 pip install torch jupyterlab
 ```
 
-Alternatively, you can install all required Python package used in this book all once via the [`requirements.txt`](https://github.com/rasbt/reasoning-from-scratch/blob/main/requirements.txt) file:
+Run the installation commands from this repository checkout to use the LFM3 edition. You can install all required packages via the [`requirements.txt`](https://github.com/rasbt/reasoning-from-scratch/blob/main/requirements.txt) file:
 
 ```bash
-pip install -r https://raw.githubusercontent.com/rasbt/reasoning-from-scratch/refs/heads/main/requirements.txt
+python -m pip install -e .
 ```
 
 

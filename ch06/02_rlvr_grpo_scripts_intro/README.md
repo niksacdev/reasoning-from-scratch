@@ -1,5 +1,7 @@
 # Chapter 6: Training Reasoning Models with Reinforcement Learning
 
+LFM3 edition: executable examples use the LFM3 base candidate. Historical Qwen tables and sample output below are reference results; they do not measure LFM3.
+
 &nbsp;
 
 &nbsp;
@@ -82,7 +84,7 @@ Then, to evaluate the model, run the `evaluate_math500.py` script on the generat
 uv run ../../ch03/02_math500-verifier-scripts/evaluate_math500.py \
 --dataset_size 500 \
 --which_model base \
---checkpoint_path checkpoints/rlvr_grpo_original/qwen3-0.6B-rlvr-grpo-step00050.pth
+--checkpoint_path checkpoints/rlvr_grpo_original/lfm3-1.7B-rlvr-grpo-step00050.pth
 ```
 
 **Rows 5 & 6**

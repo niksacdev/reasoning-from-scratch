@@ -1,3 +1,4 @@
+from reasoning_from_scratch.lfm3 import load_state_dict_file
 # Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt)
 # Source for "Build a Reasoning Model (From Scratch)": https://mng.bz/lZ5B
 # Code repository: https://github.com/rasbt/reasoning-from-scratch
@@ -29,7 +30,7 @@ from reasoning_from_scratch.ch04 import top_p_filter
 from reasoning_from_scratch.ch06 import (
     load_math_train,
 )
-from reasoning_from_scratch.qwen3 import KVCache, Qwen3Model, QWEN_CONFIG_06_B
+from reasoning_from_scratch.lfm3 import KVCache, LFM3Model, LFM3_CONFIG_1_7B
 
 SCRIPT_NAME = Path(__file__).stem
 LOG_PATH = Path(__file__).parent / "logs" / f"{SCRIPT_NAME}_outputs.txt"
@@ -294,7 +295,7 @@ def save_checkpoint(model, checkpoint_dir, step, suffix="", is_main=True):
     checkpoint_dir = Path(checkpoint_dir)
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     suffix = f"-{suffix}" if suffix else ""
-    ckpt_path = checkpoint_dir / f"qwen3-0.6B-rlvr-grpo-step{step:05d}{suffix}.pth"
+    ckpt_path = checkpoint_dir / f"lfm3-1.7B-rlvr-grpo-step{step:05d}{suffix}.pth"
     state_dict = get_model_state_dict(model)
     if not is_main:
         return None
@@ -445,8 +446,8 @@ def main_worker(rank, world_size, args):
 
         if args.checkpoint_path:
             tokenizer = load_tokenizer_only(which_model="base")
-            model = Qwen3Model(QWEN_CONFIG_06_B)
-            state_dict = torch.load(args.checkpoint_path, map_location="cpu")
+            model = LFM3Model(LFM3_CONFIG_1_7B)
+            state_dict = load_state_dict_file(args.checkpoint_path, map_location="cpu")
             model.load_state_dict(state_dict)
             target_dtype = model.cfg["dtype"]
             model = model.to(device=device, dtype=target_dtype)
@@ -481,7 +482,7 @@ def main_worker(rank, world_size, args):
 
         final_state = get_model_state_dict(trained)
         if is_main and final_state:
-            torch.save(final_state, CHECKPOINT_DIR / "qwen3-0.6B-rlvr-grpo.pth")
+            torch.save(final_state, CHECKPOINT_DIR / "lfm3-1.7B-rlvr-grpo.pth")
 
         dist.barrier()
     finally:

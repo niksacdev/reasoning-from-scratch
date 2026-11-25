@@ -10,7 +10,7 @@ This folder contains the parser experiment from [issue #133](https://github.com/
 
 - [compare_with_current_parser.ipynb](compare_with_current_parser.ipynb): notebook with usage examples
 - [math500_gpt_answers.json](math500_gpt_answers.json): MATH-500 examples with LLM answers, used for a section in the notebook above
-- [gen_llm_answers.py](gen_llm_answers.py): Convenience script to get boxed answers from the Qwen3 model in json format
+- [gen_llm_answers.py](gen_llm_answers.py): Convenience script to get boxed answers from the LFM3 candidate in json format
 - [evaluate_math500_advanced.py](evaluate_math500_advanced.py): Same as the chapter 3 LLM evaluation script [evaluate_math500.py](../02_math500-verifier-scripts/evaluate_math500.py) but supports `--hybrid_parser` as an additional argument to use the alternative hybrid parser, for example,
 
 ```python

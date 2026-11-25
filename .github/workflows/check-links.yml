@@ -40,7 +40,8 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           curl -LsSf https://astral.sh/uv/install.sh | sh
           uv sync --dev --python=3.10
-          uv pip install pytest-check-links
+          # Pin the plugin that supports the configured ignore patterns.
+          uv pip install "pytest<9" "pytest-check-links==0.10.1"
 
       - name: Check links
         shell: bash

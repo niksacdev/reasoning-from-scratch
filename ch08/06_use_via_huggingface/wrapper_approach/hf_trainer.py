@@ -114,8 +114,8 @@ def build_records(data, tokenizer, tokenizer_kind, max_seq_len):
 def parse_args():
     parser = argparse.ArgumentParser(
         description=(
-            "Continue training Qwen3 with transformers.Trainer via a local "
-            "wrapper around the scratch Qwen3Model."
+            "Continue training LFM3 with transformers.Trainer via a local "
+            "wrapper around the scratch LFM3Model."
         ),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
@@ -141,7 +141,7 @@ def parse_args():
     parser.add_argument(
         "--local_dir",
         type=str,
-        default="qwen3",
+        default="lfm3",
         help="Download/cache directory for the model and tokenizer.",
     )
     parser.add_argument(

@@ -26,6 +26,9 @@ dependencies = [
     "jupyterlab>=4.4.7",
     "torch>=2.10,<3",  # 2.10.0 is the version originally used in the book
     "tokenizers>=0.21.2",
+    "huggingface-hub>=1.0",
+    "safetensors>=0.7",
+    "requests>=2.32.3",
     "nbformat>=5.10.4",
     "setuptools>=61.0",
     "sympy>=1.14.0", # For verifier in ch03
@@ -50,7 +53,7 @@ dev = [
     "pytest-ruff>=0.5",
     "huggingface-hub>=1.0",
     "safetensors>=0.7",
-    "transformers>=4.53.0",
+    "transformers>=5.23.0; python_version >= '3.11'",
     "twine>=6.1.0",
     "build>=1.2.2.post1",
 ]
@@ -73,6 +76,8 @@ include = ["reasoning_from_scratch", "reasoning_from_scratch.*"]
 
 [tool.uv]
 exclude-newer = "7 days"  # Requires a newer uv; run `uv self update` if this fails to parse
+# The pinned LFM3 reference code requires APIs first available in 5.23.
+exclude-newer-package = { transformers = "2026-11-25T00:00:00Z" }
 
 [tool.uv.sources]
 reasoning = { workspace = true }

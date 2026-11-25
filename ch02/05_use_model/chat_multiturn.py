@@ -1,3 +1,4 @@
+from reasoning_from_scratch.lfm3 import load_state_dict_file
 # Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt)
 # Source for "Build a Reasoning Model (From Scratch)": https://mng.bz/lZ5B
 # Code repository: https://github.com/rasbt/reasoning-from-scratch
@@ -18,14 +19,14 @@ from reasoning_from_scratch.ch02 import (
 from reasoning_from_scratch.ch02 import (
     generate_text_basic_stream_cache
 )
-from reasoning_from_scratch.qwen3 import (
-    download_qwen3_small,
-    Qwen3Model,
-    Qwen3Tokenizer,
-    QWEN_CONFIG_06_B
+from reasoning_from_scratch.lfm3 import (
+    download_lfm3,
+    LFM3Model,
+    LFM3Tokenizer,
+    LFM3_CONFIG_1_7B
 )
 
-parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, description="Run Qwen3 text generation (interactive REPL)")
+parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, description="Run LFM3 text generation (interactive REPL)")
 parser.add_argument(
     "--device",
     type=str,
@@ -47,29 +48,30 @@ parser.add_argument(
 parser.add_argument(
     "--reasoning",
     action="store_true",
-    help="Use reasoning model variant."
+    help="Use chat prompting with the same LFM3 base weights."
 )
 
 args = parser.parse_args()
 device = torch.device(args.device) if args.device else get_device()
 
 if args.reasoning:
-    download_qwen3_small(kind="reasoning", tokenizer_only=False, out_dir="qwen3")
-    tokenizer_path = Path("qwen3") / "tokenizer-reasoning.json"
-    model_path = Path("qwen3") / "qwen3-0.6B-reasoning.pth"
+    download_lfm3(kind="reasoning", tokenizer_only=False, out_dir="lfm3")
+    tokenizer_path = Path("lfm3") / "tokenizer.json"
+    model_path = Path("lfm3") / "model.safetensors"
 else:
-    download_qwen3_small(kind="base", tokenizer_only=False, out_dir="qwen3")
-    tokenizer_path = Path("qwen3") / "tokenizer-base.json"
-    model_path = Path("qwen3") / "qwen3-0.6B-base.pth"
+    download_lfm3(kind="base", tokenizer_only=False, out_dir="lfm3")
+    tokenizer_path = Path("lfm3") / "tokenizer.json"
+    model_path = Path("lfm3") / "model.safetensors"
 
 # We will apply the chat template manually later
-tokenizer = Qwen3Tokenizer(
+tokenizer = LFM3Tokenizer(
     tokenizer_file_path=tokenizer_path,
-    apply_chat_template=False
+    apply_chat_template=False,
+    add_thinking=args.reasoning,
 )
 
-model = Qwen3Model(QWEN_CONFIG_06_B)
-state = torch.load(model_path, map_location=device)
+model = LFM3Model(LFM3_CONFIG_1_7B)
+state = load_state_dict_file(model_path, map_location=device)
 model.load_state_dict(state)
 model.to(device)
 model.eval()
@@ -77,7 +79,7 @@ model.eval()
 if args.compile:
     model = torch.compile(model)
 
-# The reasoning model may emit <|im_end|>; base may emit <|endoftext|>.
+# LFM3 uses <|im_end|> for EOS; stop on <|endoftext|> as well.
 EOS_TOKEN_IDS = (
     tokenizer.encode("<|im_end|>")[0],
     tokenizer.encode("<|endoftext|>")[0]
@@ -109,15 +111,7 @@ def build_prompt_from_history(history, add_assistant_header=True):
     """
     history: [{"role": "system"|"user"|"assistant", "content": str}, ...]
     """
-    parts = []
-    for m in history:
-        role = m["role"]
-        content = m["content"]
-        parts.append(f"<|im_start|>{role}\n{content}<|im_end|>\n")
-
-    if add_assistant_header:
-        parts.append("<|im_start|>assistant\n")
-    return "".join(parts)
+    return tokenizer.format_messages(history, add_assistant_header)
 
 
 def trim_input_tensor(input_ids_tensor, context_len, max_new_tokens):
@@ -139,7 +133,7 @@ def run_generate(user_text):
 
     # Encode full history
     prompt = build_prompt_from_history(history, add_assistant_header=True)
-    input_ids = tokenizer.encode(prompt)
+    input_ids = tokenizer.encode(prompt, chat_wrapped=False)
     input_token_ids_tensor = torch.tensor(input_ids, device=device).unsqueeze(0)
 
     # Left-tuncate (to make space for generation)

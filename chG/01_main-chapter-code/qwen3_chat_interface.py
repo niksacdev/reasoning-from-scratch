@@ -1,3 +1,4 @@
+from reasoning_from_scratch.lfm3 import load_state_dict_file
 # Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt).
 # Source for "Build a Large Language Model From Scratch"
 #   - https://www.manning.com/books/build-a-large-language-model-from-scratch
@@ -15,7 +16,7 @@ from reasoning_from_scratch.ch02 import (
 )
 from reasoning_from_scratch.ch02 import generate_text_basic_stream_cache
 from reasoning_from_scratch.ch03 import load_model_and_tokenizer, load_tokenizer_only
-from reasoning_from_scratch.qwen3 import Qwen3Model, QWEN_CONFIG_06_B
+from reasoning_from_scratch.lfm3 import LFM3Model, LFM3_CONFIG_1_7B
 
 
 # ============================================================
@@ -23,7 +24,7 @@ from reasoning_from_scratch.qwen3 import Qwen3Model, QWEN_CONFIG_06_B
 # ============================================================
 WHICH_MODEL = "reasoning"  # "base" for base model
 MAX_NEW_TOKENS = 38912
-LOCAL_DIR = "qwen3"
+LOCAL_DIR = "lfm3"
 # Set CHECKPOINT_PATH to load a custom .pth checkpoint instead of the
 # default weights in LOCAL_DIR. Keep WHICH_MODEL aligned with the tokenizer
 # that checkpoint expects; chapter 8 distillation checkpoints use "reasoning".
@@ -52,8 +53,8 @@ def load_app_model_and_tokenizer():
         raise FileNotFoundError(f"Checkpoint file not found: {checkpoint_path}")
 
     tokenizer = load_tokenizer_only(which_model=WHICH_MODEL, local_dir=LOCAL_DIR)
-    model = Qwen3Model(QWEN_CONFIG_06_B)
-    model.load_state_dict(torch.load(checkpoint_path, map_location="cpu"))
+    model = LFM3Model(LFM3_CONFIG_1_7B)
+    model.load_state_dict(load_state_dict_file(checkpoint_path, map_location="cpu"))
     model.to(DEVICE)
 
     if COMPILE:

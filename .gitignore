@@ -224,3 +224,8 @@ chE/evaluate_math500.py
 chE/figures/
 chE/math500_test.json
 chE/qwen3/
+
+# LFM3 downloads and exported training artifacts
+lfm3/
+hf-lfm3*/
+*.safetensors

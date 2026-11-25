@@ -215,4 +215,4 @@ def test_save_checkpoint_writes_file(tmp_path):
     )
 
     assert path.exists()
-    assert path.name == "qwen3-0.6B-rlvr-grpo-step00007-test.pth"
+    assert path.name == "lfm3-1.7B-rlvr-grpo-step00007-test.pth"
