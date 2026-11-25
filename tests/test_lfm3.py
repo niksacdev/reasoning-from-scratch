@@ -49,7 +49,11 @@ def test_cached_matches_full_sequence_across_sliding_window(tiny_cfg, chunks):
     for length in chunks:
         outputs.append(model(ids[:, start:start + length], cache=cache))
         start += length
-    torch.testing.assert_close(torch.cat(outputs, 1), expected)
+    cached = torch.cat(outputs, 1)
+    # CPU GEMV/GEMM kernels accumulate FP32 products differently when the
+    # sequence is decoded token by token. Check both logits and decisions.
+    torch.testing.assert_close(cached, expected, atol=3e-5, rtol=1e-5)
+    torch.testing.assert_close(cached.argmax(-1), expected.argmax(-1))
     assert cache.get(0).shape[-1] == tiny_cfg["conv_kernel_size"] - 1
     assert cache.get(1)[0].shape[2] <= tiny_cfg["sliding_window"]
     cache.reset()
