@@ -10,7 +10,8 @@ Original implementation shared by @labdmitriy and added here as bonus material.
 
 import re
 
-from sympy import Contains, FiniteSet, Interval, Matrix, Symbol, Union, oo, sympify
+from sympy import Contains, FiniteSet, Interval, Matrix, Symbol, Union, oo
+from reasoning_from_scratch.safe_math import parse_math_expression
 from sympy.parsing.latex import parse_latex as _parse_latex
 
 RE_TEXT = re.compile(r"^\\text\s*\{([^}]*)\}$")
@@ -399,7 +400,7 @@ def sympy_parser_hybrid(answer: str):
     is_sympy_style = RE_SYMPY_STYLE.search(preprocessed) and "\\" not in preprocessed
     if is_sympy_style:
         try:
-            return sympify(preprocessed)
+            return parse_math_expression(preprocessed)
         except Exception:
             pass
 
@@ -407,7 +408,7 @@ def sympy_parser_hybrid(answer: str):
         return _parse_latex(preprocessed)
     except Exception:
         try:
-            return sympify(preprocessed)
+            return parse_math_expression(preprocessed)
         except Exception:
             return None
 

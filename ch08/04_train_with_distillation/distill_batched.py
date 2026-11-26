@@ -1,4 +1,4 @@
-from reasoning_from_scratch.lfm3 import load_state_dict_file
+from reasoning_from_scratch.lfm3 import load_pretrained_model
 # Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt)
 # Source for "Build a Reasoning Model (From Scratch)": https://mng.bz/lZ5B
 # Code repository: https://github.com/rasbt/reasoning-from-scratch
@@ -18,8 +18,6 @@ from reasoning_from_scratch.ch03 import (
     render_prompt,
 )
 from reasoning_from_scratch.lfm3_batched import (
-    LFM3_CONFIG_1_7B,
-    LFM3Model,
     load_model_and_tokenizer,
 )
 
@@ -168,6 +166,8 @@ def iter_batches(examples, batch_size):
 
 
 def prepare_batch_tensors(batch_examples, pad_id, device):
+    if not batch_examples:
+        raise ValueError("Batch requires at least one example")
     if pad_id is None:
         raise ValueError("Tokenizer is missing pad_token_id, which is required for batching.")
 
@@ -196,6 +196,8 @@ def prepare_batch_tensors(batch_examples, pad_id, device):
     for row_idx, example in enumerate(batch_examples):
         token_ids = example["token_ids"]
         prompt_len = example["prompt_len"]
+        if not 1 <= prompt_len < len(token_ids):
+            raise ValueError("Example requires a nonempty prompt and answer")
 
         input_seq = token_ids[:-1]
         target_seq = token_ids[1:]
@@ -245,6 +247,8 @@ def compute_batch_loss(model, batch_examples, pad_id, device):
 
 @torch.no_grad()
 def evaluate_examples_batched(model, examples, batch_size, pad_id, device):
+    if not examples:
+        raise ValueError("Evaluation requires at least one example")
     was_training = model.training
     model.eval()
 
@@ -519,10 +523,8 @@ def main():
     tokenizer_variant = "reasoning" if args.use_think_tokens else "base"
     tokenizer = load_tokenizer_only(which_model=tokenizer_variant)
     if checkpoint_path is not None:
-        model = LFM3Model(LFM3_CONFIG_1_7B)
-        state_dict = load_state_dict_file(checkpoint_path, map_location="cpu")
-        model.load_state_dict(state_dict)
-        model.to(device)
+        # LFM3-specific: native checkpoint names and shared embedding weights.
+        model = load_pretrained_model(checkpoint_path, device=device)
     else:
         model, _ = load_model_and_tokenizer(
             which_model="base",

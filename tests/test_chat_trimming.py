@@ -53,7 +53,7 @@ def test_trimmed_prompt_uses_full_context(
     output = list(generate_text_basic_stream_cache(model, trimmed, max_new_tokens))
     assert len(output) == max_new_tokens
     # Keep as much history as possible without overflowing during generation.
-    assert model.current_pos == context_len
+    assert model.current_pos == (context_len if max_new_tokens else 0)
 
 
 def test_prompt_with_room_is_unchanged(trim_input_tensor):

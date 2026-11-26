@@ -1,0 +1,588 @@
+{
+  "model_id": "LiquidAI/LFM3-1.7B-Base",
+  "revision": "7bca5038823c0d0f14efe06439109354a10e014c",
+  "date": "2026-11-25",
+  "hardware": "Apple M4 Max, 64 GB RAM",
+  "python": "3.14.9",
+  "torch": "2.10.0",
+  "default_suite": {
+    "passed": 434,
+    "skipped": 32
+  },
+  "full_weight_suite": {
+    "passed": 5,
+    "seconds": 75.02,
+    "results": [
+      {
+        "check": "pretrained_cache",
+        "uncached": {
+          "seconds": 2.311452041962184,
+          "tokens_per_second": 13.844111588330989,
+          "timings": [
+            2.311452041962184,
+            2.3037271660286933,
+            2.4554396660532802
+          ]
+        },
+        "cached": {
+          "seconds": 1.2276466250186786,
+          "tokens_per_second": 26.06613283322725,
+          "timings": [
+            1.2276466250186786,
+            1.2647555830189958,
+            1.2017680000280961
+          ]
+        },
+        "identical_tokens": true,
+        "speedup": 1.8828317488568955,
+        "device": "mps:0",
+        "dtype": "torch.float32",
+        "text": " a model organism for studying the molecular mechanisms of development and aging. The nematode C. elegans has a short life cycle, a small genome, and a",
+        "token_ids": [
+          267,
+          2300,
+          19316,
+          374,
+          12643,
+          278,
+          11389,
+          11274,
+          302,
+          2416,
+          309,
+          18678,
+          22,
+          440,
+          58330,
+          1083,
+          340,
+          22,
+          13729,
+          497,
+          677,
+          267,
+          2789,
+          1604,
+          7691,
+          20,
+          267,
+          1710,
+          15620,
+          20,
+          309,
+          267
+        ]
+      },
+      {
+        "check": "pretrained_sampling",
+        "batched_text": [
+          " Berlin. The capital",
+          " 3. "
+        ],
+        "sampled_text": " Berlin, and it",
+        "answer_logprob": -1.2189631462097168,
+        "vote": "{'full_answers': [' 1+1', ' The answer is '], 'short_answers': ['1', ' The answer is '], 'counts': {'1': 1, ' The answer is ': 1}, 'groups': {'1': [0], ' The answer is ': [1]}, 'majority_winners': ['1', ' The answer is '], 'final_answer': None}"
+      },
+      {
+        "check": "pretrained_reference",
+        "max_logit_difference": 7.62939453125e-06,
+        "identical_32_tokens": true
+      },
+      {
+        "check": "pretrained_training",
+        "loss": 3.2699172496795654,
+        "changed_first_conv_weights": 12582912,
+        "checkpoint_roundtrip": true,
+        "dtype": "torch.float32"
+      },
+      {
+        "check": "pretrained_trained_export",
+        "max_logit_difference": 3.814697265625e-06,
+        "roundtrip": true,
+        "finetuning_loss": 1.3570404052734375
+      }
+    ]
+  },
+  "initial_fair_cache_run": {
+    "check": "pretrained_cache",
+    "uncached": {
+      "seconds": 2.58370925008785,
+      "tokens_per_second": 12.385294513657817,
+      "timings": [
+        2.58370925008785,
+        2.5764615410007536,
+        2.602530665928498
+      ]
+    },
+    "cached": {
+      "seconds": 1.2933984170667827,
+      "tokens_per_second": 24.74102301174204,
+      "timings": [
+        1.2887642499990761,
+        1.2933984170667827,
+        1.2996963750338182
+      ]
+    },
+    "identical_tokens": true,
+    "speedup": 1.9976128128773207,
+    "device": "mps:0",
+    "dtype": "torch.float32",
+    "text": " a model organism for studying the molecular mechanisms of development and aging. The nematode C. elegans has a short life cycle, a small genome, and a",
+    "token_ids": [
+      267,
+      2300,
+      19316,
+      374,
+      12643,
+      278,
+      11389,
+      11274,
+      302,
+      2416,
+      309,
+      18678,
+      22,
+      440,
+      58330,
+      1083,
+      340,
+      22,
+      13729,
+      497,
+      677,
+      267,
+      2789,
+      1604,
+      7691,
+      20,
+      267,
+      1710,
+      15620,
+      20,
+      309,
+      267
+    ]
+  },
+  "independent_full_reference": {
+    "prompt": "The nematode C. elegans is",
+    "native_argmax": [
+      [
+        11,
+        1083,
+        355,
+        22,
+        13729,
+        497,
+        355,
+        267
+      ]
+    ],
+    "reference_argmax": [
+      [
+        11,
+        1083,
+        355,
+        22,
+        13729,
+        497,
+        355,
+        267
+      ]
+    ],
+    "max_abs_diff": 7.62939453125e-06,
+    "mean_abs_diff": 6.483668357759598e-07,
+    "cache_max_abs_diff": 8.58306884765625e-06,
+    "next_native": " a",
+    "next_reference": " a",
+    "hf_cache_identical_tokens": true,
+    "hf_generated_text": " a model organism for studying the molecular mechanisms of development and aging. The nematode C. elegans has a short life cycle, a small genome, and a",
+    "hf_generated_ids": [
+      267,
+      2300,
+      19316,
+      374,
+      12643,
+      278,
+      11389,
+      11274,
+      302,
+      2416,
+      309,
+      18678,
+      22,
+      440,
+      58330,
+      1083,
+      340,
+      22,
+      13729,
+      497,
+      677,
+      267,
+      2789,
+      1604,
+      7691,
+      20,
+      267,
+      1710,
+      15620,
+      20,
+      309,
+      267
+    ]
+  },
+  "notebooks": [
+    {
+      "path": "ch02/01_main-chapter-code/ch02_exercise-solutions.ipynb",
+      "status": "passed",
+      "rendered_plots": 0,
+      "skipped_live_cells_zero_based": [],
+      "caps": {
+        "max_new_tokens": 8,
+        "num_samples": 2,
+        "num_rollouts": 2,
+        "steps": 1,
+        "epochs": 1,
+        "iterations": 1,
+        "max_examples": 1,
+        "num_examples": 1,
+        "max_items": 1,
+        "eval_max_items": 1
+      }
+    },
+    {
+      "path": "ch02/01_main-chapter-code/ch02_main.ipynb",
+      "status": "passed",
+      "rendered_plots": 0,
+      "skipped_live_cells_zero_based": [],
+      "caps": {
+        "max_new_tokens": 8,
+        "num_samples": 2,
+        "num_rollouts": 2,
+        "steps": 1,
+        "epochs": 1,
+        "iterations": 1,
+        "max_examples": 1,
+        "num_examples": 1,
+        "max_items": 1,
+        "eval_max_items": 1
+      }
+    },
+    {
+      "path": "ch03/01_main-chapter-code/ch03_exercise-solutions.ipynb",
+      "status": "passed",
+      "rendered_plots": 0,
+      "skipped_live_cells_zero_based": [],
+      "caps": {
+        "max_new_tokens": 8,
+        "num_samples": 2,
+        "num_rollouts": 2,
+        "steps": 1,
+        "epochs": 1,
+        "iterations": 1,
+        "max_examples": 1,
+        "num_examples": 1,
+        "max_items": 1,
+        "eval_max_items": 1
+      }
+    },
+    {
+      "path": "ch03/01_main-chapter-code/ch03_main.ipynb",
+      "status": "passed",
+      "rendered_plots": 0,
+      "skipped_live_cells_zero_based": [],
+      "caps": {
+        "max_new_tokens": 8,
+        "num_samples": 2,
+        "num_rollouts": 2,
+        "steps": 1,
+        "epochs": 1,
+        "iterations": 1,
+        "max_examples": 1,
+        "num_examples": 1,
+        "max_items": 1,
+        "eval_max_items": 1
+      }
+    },
+    {
+      "path": "ch03/03_advanced-parser/compare_with_current_parser.ipynb",
+      "status": "passed",
+      "rendered_plots": 0,
+      "skipped_live_cells_zero_based": [],
+      "caps": {
+        "max_new_tokens": 8,
+        "num_samples": 2,
+        "num_rollouts": 2,
+        "steps": 1,
+        "epochs": 1,
+        "iterations": 1,
+        "max_examples": 1,
+        "num_examples": 1,
+        "max_items": 1,
+        "eval_max_items": 1
+      }
+    },
+    {
+      "path": "ch04/01_main-chapter-code/ch04_exercise-solutions.ipynb",
+      "status": "passed",
+      "rendered_plots": 0,
+      "skipped_live_cells_zero_based": [],
+      "caps": {
+        "max_new_tokens": 8,
+        "num_samples": 2,
+        "num_rollouts": 2,
+        "steps": 1,
+        "epochs": 1,
+        "iterations": 1,
+        "max_examples": 1,
+        "num_examples": 1,
+        "max_items": 1,
+        "eval_max_items": 1
+      }
+    },
+    {
+      "path": "ch04/01_main-chapter-code/ch04_main.ipynb",
+      "status": "passed",
+      "rendered_plots": 6,
+      "skipped_live_cells_zero_based": [],
+      "caps": {
+        "max_new_tokens": 8,
+        "num_samples": 2,
+        "num_rollouts": 2,
+        "steps": 1,
+        "epochs": 1,
+        "iterations": 1,
+        "max_examples": 1,
+        "num_examples": 1,
+        "max_items": 1,
+        "eval_max_items": 1
+      }
+    },
+    {
+      "path": "ch05/01_main-chapter-code/ch05_exercise-solutions.ipynb",
+      "status": "passed",
+      "rendered_plots": 0,
+      "skipped_live_cells_zero_based": [],
+      "caps": {
+        "max_new_tokens": 8,
+        "num_samples": 2,
+        "num_rollouts": 2,
+        "steps": 1,
+        "epochs": 1,
+        "iterations": 1,
+        "max_examples": 1,
+        "num_examples": 1,
+        "max_items": 1,
+        "eval_max_items": 1
+      }
+    },
+    {
+      "path": "ch05/01_main-chapter-code/ch05_main.ipynb",
+      "status": "passed",
+      "rendered_plots": 2,
+      "skipped_live_cells_zero_based": [],
+      "caps": {
+        "max_new_tokens": 8,
+        "num_samples": 2,
+        "num_rollouts": 2,
+        "steps": 1,
+        "epochs": 1,
+        "iterations": 1,
+        "max_examples": 1,
+        "num_examples": 1,
+        "max_items": 1,
+        "eval_max_items": 1
+      }
+    },
+    {
+      "path": "ch06/01_main-chapter-code/ch06_exercise-solutions.ipynb",
+      "status": "passed",
+      "rendered_plots": 0,
+      "skipped_live_cells_zero_based": [],
+      "caps": {
+        "max_new_tokens": 8,
+        "num_samples": 2,
+        "num_rollouts": 2,
+        "steps": 1,
+        "epochs": 1,
+        "iterations": 1,
+        "max_examples": 1,
+        "num_examples": 1,
+        "max_items": 1,
+        "eval_max_items": 1
+      }
+    },
+    {
+      "path": "ch06/01_main-chapter-code/ch06_main.ipynb",
+      "status": "passed",
+      "rendered_plots": 0,
+      "skipped_live_cells_zero_based": [],
+      "caps": {
+        "max_new_tokens": 8,
+        "num_samples": 2,
+        "num_rollouts": 2,
+        "steps": 1,
+        "epochs": 1,
+        "iterations": 1,
+        "max_examples": 1,
+        "num_examples": 1,
+        "max_items": 1,
+        "eval_max_items": 1
+      }
+    },
+    {
+      "path": "ch07/01_main-chapter-code/ch07_exercise-solutions.ipynb",
+      "status": "passed",
+      "rendered_plots": 2,
+      "skipped_live_cells_zero_based": [],
+      "caps": {
+        "max_new_tokens": 8,
+        "num_samples": 2,
+        "num_rollouts": 2,
+        "steps": 1,
+        "epochs": 1,
+        "iterations": 1,
+        "max_examples": 1,
+        "num_examples": 1,
+        "max_items": 1,
+        "eval_max_items": 1
+      }
+    },
+    {
+      "path": "ch07/01_main-chapter-code/ch07_main.ipynb",
+      "status": "passed",
+      "rendered_plots": 8,
+      "skipped_live_cells_zero_based": [],
+      "caps": {
+        "max_new_tokens": 8,
+        "num_samples": 2,
+        "num_rollouts": 2,
+        "steps": 1,
+        "epochs": 1,
+        "iterations": 1,
+        "max_examples": 1,
+        "num_examples": 1,
+        "max_items": 1,
+        "eval_max_items": 1
+      }
+    },
+    {
+      "path": "ch08/01_main-chapter-code/ch08_exercise-solutions.ipynb",
+      "status": "passed",
+      "rendered_plots": 1,
+      "skipped_live_cells_zero_based": [],
+      "caps": {
+        "max_new_tokens": 8,
+        "num_samples": 2,
+        "num_rollouts": 2,
+        "steps": 1,
+        "epochs": 1,
+        "iterations": 1,
+        "max_examples": 1,
+        "num_examples": 1,
+        "max_items": 1,
+        "eval_max_items": 1
+      }
+    },
+    {
+      "path": "ch08/01_main-chapter-code/ch08_main.ipynb",
+      "status": "passed",
+      "rendered_plots": 2,
+      "skipped_live_cells_zero_based": [],
+      "caps": {
+        "max_new_tokens": 8,
+        "num_samples": 2,
+        "num_rollouts": 2,
+        "steps": 1,
+        "epochs": 1,
+        "iterations": 1,
+        "max_examples": 1,
+        "num_examples": 1,
+        "max_items": 1,
+        "eval_max_items": 1
+      }
+    },
+    {
+      "path": "chC/01_main-chapter-code/chC_main.ipynb",
+      "status": "passed",
+      "rendered_plots": 0,
+      "skipped_live_cells_zero_based": [],
+      "caps": {
+        "max_new_tokens": 8,
+        "num_samples": 2,
+        "num_rollouts": 2,
+        "steps": 1,
+        "epochs": 1,
+        "iterations": 1,
+        "max_examples": 1,
+        "num_examples": 1,
+        "max_items": 1,
+        "eval_max_items": 1
+      }
+    },
+    {
+      "path": "chD/chD_main.ipynb",
+      "status": "passed",
+      "rendered_plots": 0,
+      "skipped_live_cells_zero_based": [],
+      "caps": {
+        "max_new_tokens": 8,
+        "num_samples": 2,
+        "num_rollouts": 2,
+        "steps": 1,
+        "epochs": 1,
+        "iterations": 1,
+        "max_examples": 1,
+        "num_examples": 1,
+        "max_items": 1,
+        "eval_max_items": 1
+      }
+    },
+    {
+      "path": "chE/chE_main.ipynb",
+      "status": "passed",
+      "rendered_plots": 0,
+      "skipped_live_cells_zero_based": [],
+      "caps": {
+        "max_new_tokens": 8,
+        "num_samples": 2,
+        "num_rollouts": 2,
+        "steps": 1,
+        "epochs": 1,
+        "iterations": 1,
+        "max_examples": 1,
+        "num_examples": 1,
+        "max_items": 1,
+        "eval_max_items": 1
+      }
+    },
+    {
+      "path": "chF/01_main-chapter-code/chF_main.ipynb",
+      "status": "passed",
+      "rendered_plots": 0,
+      "skipped_live_cells_zero_based": [
+        41,
+        44,
+        49
+      ],
+      "caps": {
+        "max_new_tokens": 8,
+        "num_samples": 2,
+        "num_rollouts": 2,
+        "steps": 1,
+        "epochs": 1,
+        "iterations": 1,
+        "max_examples": 1,
+        "num_examples": 1,
+        "max_items": 1,
+        "eval_max_items": 1
+      }
+    }
+  ],
+  "limitations": [
+    "Bounded synthetic notebooks, not new accuracy scores",
+    "No multi-GPU FSDP or CUDA/XPU",
+    "No live Chainlit browser or hosted teacher calls",
+    "CPU Inductor checked on a small model; GPU compilation not measured"
+  ]
+}

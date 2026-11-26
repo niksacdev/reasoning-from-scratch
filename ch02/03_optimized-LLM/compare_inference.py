@@ -1,165 +1,66 @@
-from reasoning_from_scratch.lfm3 import load_state_dict_file
 # Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt)
 # Source for "Build a Reasoning Model (From Scratch)": https://mng.bz/lZ5B
 # Code repository: https://github.com/rasbt/reasoning-from-scratch
 
+"""Measure equal LFM3 generation workloads, excluding console I/O."""
 
 import argparse
-from pathlib import Path
+import json
 import time
+
 import torch
 
 from reasoning_from_scratch.ch02 import (
-    get_device,
-    generate_stats
+    benchmark_generation, generate_stats, generate_text_basic,
+    generate_text_basic_cache, get_device, synchronize_device,
 )
-from reasoning_from_scratch.lfm3 import (
-    download_lfm3,
-    LFM3Tokenizer,
-    LFM3_CONFIG_1_7B
-)
+from reasoning_from_scratch.lfm3 import load_model_and_tokenizer
 
 
-############################
-# Parse command-line args
-############################
-parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, description="Run LFM3 text generation")
-parser.add_argument(
-    "--device",
-    type=str,
-    default=None,
-    help="Device to run on (e.g. 'cpu', 'cuda', 'mps'). "
-         "If not provided, will auto-detect with get_device()."
-)
-parser.add_argument(
-    "--cache",
-    action="store_true",
-    help="Use KV cache during generation."
-)
-
-parser.add_argument(
-    "--compile",
-    action="store_true",
-    help="Compile PyTorch model."
-)
-
-parser.add_argument(
-    "--reasoning",
-    action="store_true",
-    help="Use chat prompting with the same LFM3 base weights."
-)
-
-parser.add_argument(
-    "--optimized",
-    action="store_true",
-    help="Compatibility flag: LFM3 already uses scaled dot product attention."
-)
-
-
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--device", default=None)
+parser.add_argument("--cache", action="store_true")
+parser.add_argument("--compile", action="store_true")
+parser.add_argument("--reasoning", action="store_true",
+                    help="Use chat prompting with the same LFM3 base weights")
+parser.add_argument("--optimized", action="store_true",
+                    help="Compatibility flag: LFM3 always uses native SDPA")
+parser.add_argument("--compare", action="store_true",
+                    help="Benchmark both cached and uncached generation")
+parser.add_argument("--max_new_tokens", type=int, default=64)
+parser.add_argument("--prompt", default=None)
 args = parser.parse_args()
-
-if args.optimized:
-    from reasoning_from_scratch.lfm3 import LFM3Model
-else:
-    from reasoning_from_scratch.lfm3 import LFM3Model
-
-
-if args.cache:
-    if args.optimized:
-        from reasoning_from_scratch.ch02 import generate_text_basic_cache as generate_text
-        is_streaming_generate = False
-    else:
-        from reasoning_from_scratch.ch02 import generate_text_basic_stream_cache as generate_text
-        is_streaming_generate = True
-
-else:
-    from reasoning_from_scratch.ch02 import generate_text_basic_stream as generate_text
-    is_streaming_generate = True
-
+if args.max_new_tokens < 1:
+    parser.error("--max_new_tokens must be positive")
 device = torch.device(args.device) if args.device else get_device()
-
-#########################
-# Model + tokenizer setup
-#########################
-
-if args.reasoning:
-    download_lfm3(kind="reasoning", tokenizer_only=False, out_dir="lfm3")
-    tokenizer_path = Path("lfm3") / "tokenizer.json"
-    model_path = Path("lfm3") / "model.safetensors"
-    tokenizer = LFM3Tokenizer(
-        tokenizer_file_path=tokenizer_path,
-        apply_chat_template=True,
-        add_generation_prompt=True,
-        add_thinking=True
-    )
-
-else:
-    download_lfm3(kind="base", tokenizer_only=False, out_dir="lfm3")
-    tokenizer_path = Path("lfm3") / "tokenizer.json"
-    model_path = Path("lfm3") / "model.safetensors"
-    tokenizer = LFM3Tokenizer(tokenizer_file_path=tokenizer_path)
-
-model = LFM3Model(LFM3_CONFIG_1_7B)
-model.load_state_dict(load_state_dict_file(model_path, map_location=device))
-
-model.to(device)
-
+# LFM3-specific: load the hybrid model, its tokenizer, and tied embeddings.
+model, tokenizer = load_model_and_tokenizer(
+    which_model="reasoning" if args.reasoning else "base", device=device,
+)
 if args.compile:
     major, minor = map(int, torch.__version__.split(".")[:2])
     if (major, minor) >= (2, 8):
-        # This avoids retriggering model recompilations
-        # in PyTorch 2.8 and newer
-        # if the model contains code like self.pos = self.pos + 1
         torch._dynamo.config.allow_unspec_int_on_nn_module = True
     model = torch.compile(model)
 
-#########################
-# Prompt + generation
-#########################
-
-if args.reasoning:
-    prompt = "Find all c in Z_3 such that Z_3[x]/(x^2 + c) is a field."
+prompt = args.prompt or (
+    "Find all c in Z_3 such that Z_3[x]/(x^2 + c) is a field."
+    if args.reasoning else "The nematode C. elegans is"
+)
+input_ids = torch.tensor([tokenizer.encode(prompt)], device=device)
+print(f"device={device}, dtype={next(model.parameters()).dtype}, native SDPA")
+if args.compare:
+    print(json.dumps(benchmark_generation(model, input_ids, args.max_new_tokens), indent=2))
 else:
-    prompt = "Explain large language models in a single sentence."
-
-input_token_ids_tensor = torch.tensor(
-    tokenizer.encode(prompt),
-    device=device
-).unsqueeze(0)
-
-max_new_tokens = 2048
-
-
-for iteration in range(1, 4):
-    print("=" * 60)
-    print(f"Iteration : {iteration}")
-    print(f"optimized : {args.optimized}")
-    print(f"torch     : {torch.__version__}")
-    print(f"device    : {device}")
-    print(f"cache     : {args.cache}")
-    print(f"compile   : {args.compile}")
-    print(f"reasoning : {args.reasoning}")
-    print("=" * 60)
-
-    start_time = time.time()
-    if is_streaming_generate:
-        generated_ids = []
-        for token in generate_text(
-            model=model,
-            token_ids=input_token_ids_tensor,
-            max_new_tokens=max_new_tokens,
-            eos_token_id=tokenizer.eos_token_id,
-        ):
-            generated_ids.append(token.squeeze(0).item())
-        output_token_ids_tensor = torch.tensor(generated_ids, device=device)
-    else:
-        output_token_ids_tensor = generate_text(
-            model=model,
-            token_ids=input_token_ids_tensor,
-            max_new_tokens=max_new_tokens,
-            eos_token_id=tokenizer.eos_token_id,
-        )
-    end_time = time.time()
-
-    print(f"Output length: {output_token_ids_tensor.numel()}")
-    generate_stats(output_token_ids_tensor, tokenizer, start_time, end_time)
+    generate = generate_text_basic_cache if args.cache else generate_text_basic
+    # Fixed token count and complete warmup make timings comparable.
+    generate(model, input_ids, args.max_new_tokens)
+    for iteration in range(3):
+        synchronize_device(device)
+        start = time.perf_counter()
+        output = generate(model, input_ids, args.max_new_tokens)
+        synchronize_device(device)
+        end = time.perf_counter()
+        print(f"Run {iteration + 1}, cache={args.cache}, tokens={output.numel()}")
+        generate_stats(output, tokenizer, start, end)
+    print(tokenizer.decode(output[0].tolist()))

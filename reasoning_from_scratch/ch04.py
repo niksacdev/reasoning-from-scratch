@@ -45,12 +45,17 @@ def generate_text_stream_concat_flex(
 
 
 def plot_scores_bar(
-    next_token_logits, start=19_800, end=19_900,
+    next_token_logits, start=None, end=None,
     arrow=True, ylabel="Logit value"
 ):
 
     import matplotlib.pyplot as plt
 
+    # Center the plot on this model's prediction, not a Qwen vocabulary ID.
+    if start is None:
+        start = max(0, next_token_logits[0].argmax().item() - 50)
+    if end is None:
+        end = min(start + 100, next_token_logits.shape[-1])
     # Select vocabulary subsection
     x = torch.arange(start, end)
 
@@ -66,7 +71,7 @@ def plot_scores_bar(
     if arrow:
         max_idx = torch.argmax(logits_section)
         plt.annotate(
-            "Berlin",
+            "Highest score in window",
             xy=(x[max_idx], logits_section[max_idx]),
             xytext=(x[max_idx] - 25, logits_section[max_idx] - 2),
             arrowprops={
@@ -87,12 +92,16 @@ def scale_logits_by_temperature(logits, temperature):
 
 
 def plot_logits_with_temperature(
-    next_token_logits, start=19_800, end=19_900,
+    next_token_logits, start=None, end=None,
     temps=(0.5, 5.0),
 ):
 
     import matplotlib.pyplot as plt
 
+    if start is None:
+        start = max(0, next_token_logits[0].argmax().item() - 50)
+    if end is None:
+        end = min(start + 100, next_token_logits.shape[-1])
     x = torch.arange(start, end)
     logits_orig = next_token_logits[0, start:end].float().cpu()
 
@@ -114,7 +123,7 @@ def plot_logits_with_temperature(
     # Highlight max logit
     max_idx = torch.argmax(logits_orig)
     plt.annotate(
-        "Berlin",
+        "Highest score in window",
         xy=(x[max_idx], logits_orig[max_idx]),
         xytext=(x[max_idx] - 25, logits_orig[max_idx] + 2),
         arrowprops={"facecolor": "black", "arrowstyle": "->", "lw": 1.5},
@@ -155,6 +164,8 @@ def generate_text_temp_stream_cache(
     eos_token_id=None,
     temperature=0.
 ):
+    if max_new_tokens <= 0:
+        return
     model.eval()
     cache = KVCache(n_layers=model.cfg["n_layers"])
     model.reset_kv_cache()
@@ -175,7 +186,7 @@ def generate_text_temp_stream_cache(
             logits = scale_logits_by_temperature(out, temperature)
 
             # Step 3.3: Convert to probabilities
-            probas = torch.softmax(logits, dim=-1)
+            probas = torch.softmax(logits.float(), dim=-1)
 
             # Step 3.4: Sample token according to probabilities
             next_token = torch.multinomial(probas.cpu(), num_samples=1)
@@ -231,6 +242,8 @@ def generate_text_top_p_stream_cache(
     temperature=0.,
     top_p=None
 ):
+    if max_new_tokens <= 0:
+        return
     model.eval()
     cache = KVCache(n_layers=model.cfg["n_layers"])
     model.reset_kv_cache()
@@ -249,7 +262,7 @@ def generate_text_top_p_stream_cache(
             logits = scale_logits_by_temperature(out, temperature)
 
             # Step 3.3: Convert to probabilities
-            probas = torch.softmax(logits, dim=-1)
+            probas = torch.softmax(logits.float(), dim=-1)
 
             # (New) Step 4: Apply top-p filter to probabilities
             probas = top_p_filter(probas, top_p)

@@ -1,4 +1,4 @@
-from reasoning_from_scratch.lfm3 import load_state_dict_file
+from reasoning_from_scratch.lfm3 import load_pretrained_model
 # Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt).
 # Source for "Build a Large Language Model From Scratch"
 #   - https://www.manning.com/books/build-a-large-language-model-from-scratch
@@ -16,7 +16,6 @@ from reasoning_from_scratch.ch02 import (
 )
 from reasoning_from_scratch.ch02 import generate_text_basic_stream_cache
 from reasoning_from_scratch.ch03 import load_model_and_tokenizer, load_tokenizer_only
-from reasoning_from_scratch.lfm3 import LFM3Model, LFM3_CONFIG_1_7B
 
 # ============================================================
 # EDIT ME: Simple configuration
@@ -73,9 +72,8 @@ def load_app_model_and_tokenizer():
         raise FileNotFoundError(f"Checkpoint file not found: {checkpoint_path}")
 
     tokenizer = load_tokenizer_only(which_model=WHICH_MODEL, local_dir=LOCAL_DIR)
-    model = LFM3Model(LFM3_CONFIG_1_7B)
-    model.load_state_dict(load_state_dict_file(checkpoint_path, map_location="cpu"))
-    model.to(DEVICE)
+    # LFM3-specific: load the native hybrid architecture.
+    model = load_pretrained_model(checkpoint_path, device=DEVICE)
 
     if COMPILE:
         torch._dynamo.config.allow_unspec_int_on_nn_module = True

@@ -17,6 +17,8 @@ model, tokenizer = load_model_and_tokenizer(device=get_device())
 
 Downloads go to `lfm3/`. The official safetensors weights, config, tokenizer and license are pinned to revision `7bca5038823c0d0f14efe06439109354a10e014c`. Loading does not execute remote model code. The 1.73B weights need about 3.5 GB in BF16, before activations, gradients and optimizer states. Full AdamW training needs substantially more memory; start with short sequences, small batches and a GPU, then measure usage before a longer run. The advertised 256K context is an architectural limit, not a practical training default.
 
+CPU and Apple MPS loaders default to FP32 (about 6.9 GB of parameter data). This avoids CPU BF16 slowdowns and the cached/uncached decision differences observed with MPS BF16. CUDA/XPU retain the checkpoint dtype. To choose explicitly, pass `dtype=torch.bfloat16` or `dtype=torch.float32` to `load_model_and_tokenizer`. Pretrained loading uses a meta model and strict assignment, preserving tied embeddings without initializing another full random model.
+
 `which_model="base"` uses raw text completion prompts. `which_model="reasoning"` uses text chat prompts with an assistant header, leaving the thinking tag in the generated target so the chapter 7 format reward can learn it. Both modes load the identical base checkpoint and tokenizer. They do not select a pretrained reasoning model. The LFM3 tokenizer already contains `<think>` and `</think>`; never add or renumber vocabulary entries. Padding is `<|pad|>` and EOS is `<|im_end|>`.
 
 ## Chapter map
@@ -79,4 +81,25 @@ SKIP_EXPENSIVE=1 python -m pytest tests
 RUN_REAL_DOWNLOAD_TESTS=1 python -m pytest tests/test_lfm3_reference.py
 ```
 
-Full pretrained-model training, GPU/FSDP runs and new MATH-500 scores require dedicated compute and are not implied by tiny-model checks.
+Full-weight checks and bounded execution of every notebook are also available:
+
+```bash
+LFM3_PRETRAINED_DIR=/absolute/path/to/lfm3 LFM3_TEST_DEVICE=mps python -m pytest -s tests/test_lfm3_pretrained.py
+python tests/run_lfm3_notebooks.py --weights /absolute/path/to/lfm3 --output /tmp/lfm3-notebooks
+RUN_LFM3_COMPILE_TESTS=1 python -m pytest tests/test_lfm3.py -k compiled_native
+```
+
+Set `LFM3_REFERENCE_DIR` to the pinned official modeling-code directory to include full-weight reference and trained-export parity checks. The notebook runner records every workload override and live-service skip; it uses short synthetic examples and saves executed copies outside the source tree. See [the validation report](LFM3_VALIDATION.md) for measured results, coverage, and remaining hardware/service boundaries. These checks do not establish new MATH-500 scores or long-run training convergence.
+
+## Measuring the cache
+
+```python
+from reasoning_from_scratch.ch02 import benchmark_generation
+import torch
+
+ids = torch.tensor([tokenizer.encode("The nematode C. elegans is")],
+                   device=next(model.parameters()).device)
+print(benchmark_generation(model, ids, max_new_tokens=32, repeats=3))
+```
+
+The comparison uses identical token budgets, full-workload warmups, synchronized accelerator timers, and median timings. Decoding and printing occur outside the timer. Inspect `identical_tokens` before interpreting throughput. The gain depends on prompt/output lengths, precision, hardware, and backend kernels; reading the model weights can dominate short CPU workloads. Compilation is an explicit notebook option and is benchmarked separately when enabled.

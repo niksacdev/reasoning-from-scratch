@@ -93,9 +93,10 @@ def compile_cell_source():
 
 
 @pytest.mark.parametrize("device_type", ["cpu", "cuda", "mps"])
+@pytest.mark.parametrize("enable_compile", [False, True])
 @pytest.mark.parametrize("version, expected_version", VERSION_CASES)
 def test_compile_cell_handles_torch_versions(
-    compile_cell_source, device_type, version, expected_version
+    compile_cell_source, device_type, version, expected_version, enable_compile
 ):
     model = object()
     compiled_model = object()
@@ -109,13 +110,14 @@ def test_compile_cell_handles_torch_versions(
         "torch": fake_torch,
         "device": SimpleNamespace(type=device_type),
         "model": model,
+        "enable_compile": enable_compile,
     }
 
     # Execute the notebook's actual cell so a regression there fails this test.
     exec(compile_cell_source, namespace)
 
     assert (namespace["major"], namespace["minor"]) == expected_version
-    if device_type == "mps" and expected_version < (2, 10):
+    if not enable_compile or (device_type == "mps" and expected_version < (2, 10)):
         fake_torch.compile.assert_not_called()
         assert namespace["model_compiled"] is model
         assert config.allow_unspec_int_on_nn_module is False

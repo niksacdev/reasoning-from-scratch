@@ -1,4 +1,4 @@
-from reasoning_from_scratch.lfm3 import load_state_dict_file
+from reasoning_from_scratch.lfm3 import load_pretrained_model
 # Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt)
 # Source for "Build a Reasoning Model (From Scratch)": https://mng.bz/lZ5B
 # Code repository: https://github.com/rasbt/reasoning-from-scratch
@@ -21,9 +21,7 @@ from reasoning_from_scratch.ch02 import (
 )
 from reasoning_from_scratch.lfm3 import (
     download_lfm3,
-    LFM3Model,
-    LFM3Tokenizer,
-    LFM3_CONFIG_1_7B
+    LFM3Tokenizer
 )
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, description="Run LFM3 text generation (interactive REPL)")
@@ -75,10 +73,8 @@ else:
         add_thinking=False
     )
 
-model = LFM3Model(LFM3_CONFIG_1_7B)
-state = load_state_dict_file(model_path, map_location=device)
-model.load_state_dict(state)
-model.to(device)
+# LFM3-specific: native checkpoint names and shared embedding weights.
+model = load_pretrained_model(model_path, device=device)
 model.eval()
 
 if args.compile:

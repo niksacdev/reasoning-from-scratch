@@ -34,11 +34,8 @@ def common_prefix_len(a, b):
 def avg_logprob_teacher_forced(model, tokenizer, prompt_fmt, prompt, prompt_ids, letter, choice_text):
     # Build full answer text and then just extract the continuation token IDs
     answer_text = f"{letter}. {choice_text}"
-    ids_full = tokenizer.encode(prompt + answer_text)
-    j = common_prefix_len(ids_full, prompt_ids)
-    if j >= len(ids_full):
-        raise ValueError("Continuation produced no new tokens.")
-    answer_ids = ids_full[j:]  # tokens for the answer continuation
+    # LFM3-specific: do not wrap the answer in a second chat conversation.
+    answer_ids = tokenizer.encode(answer_text, chat_wrapped=False)
 
     # Input to model is "prompt + all" except for last answer token (to predict each next)
     device = prompt_fmt.device
@@ -51,7 +48,7 @@ def avg_logprob_teacher_forced(model, tokenizer, prompt_fmt, prompt, prompt_ids,
     with torch.no_grad():
         # Logits for every position in `combined``
         scores = model(combined).squeeze(0)  # shape [num_tokens, vocab_size]
-        logp = torch.log_softmax(scores, dim=-1)
+        logp = torch.log_softmax(scores.float(), dim=-1)
 
     prompt_len = prompt_fmt.shape[1]
     answer_len = len(answer_ids)

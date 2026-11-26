@@ -1,22 +1,32 @@
 # Repository review for the LFM3 migration
 
-Syntax and migration scans covered 100 Python files and 370 code cells in 19 notebooks. The review covered tracked Python scripts, code cells in the chapter notebooks, model-dependent imports and call sites, training/checkpoint paths, packaging, tests and GitHub workflows. The migration changes active chapter paths to LFM3 while retaining explicitly named legacy Qwen library modules and historical teacher data/logs.
+The follow-up review exercises all chapter notebooks and the shared model, inference, evaluation, GRPO, distillation, checkpoint, export and chat paths. See [the validation report](LFM3_VALIDATION.md) for workloads, evidence and boundaries.
 
-## Outstanding finding
+## Findings fixed
 
-**[P1] Python evaluation of answer text in the math verifiers.** The main parser calls `sympy.parsing.sympy_parser.parse_expr` on answer text at [ch03.py](reasoning_from_scratch/ch03.py#L236). The alternative parser calls `sympify` at [parser.py](reasoning_from_scratch/bonus/parser.py#L402) and [parser.py](reasoning_from_scratch/bonus/parser.py#L410). These are existing Python-evaluation paths, also reachable while grading generated answers. A harmless check confirmed the main parser accepts `__import__('builtins').len('abc')` and returns `3`. Replace these paths with a constrained mathematical-expression parser, and evaluate potentially expensive symbolic expressions with resource limits. This pre-existing security issue is outside the model migration and remains unresolved.
+| Finding | Fix and regression coverage |
+| --- | --- |
+| Chapter 2 forced CPU and timed console work | Keep automatic device selection; compare fixed workloads with full warmups, synchronized timers and medians. Check forward lengths, output tokens, zero budgets, EOS and context limits. |
+| MPS BF16 cached generation diverged at close token decisions | CPU/MPS loaders default to FP32. Actual full-weight FP32 logits and 32-token generation agree with the official reference. Dtype overrides remain available. |
+| Random full-model initialization before pretrained loading | Strict meta-model loading preserves tied embeddings without initializing another full random model. Script resume paths and the HF wrapper share this loader. |
+| Qwen token IDs and labels remained in examples | Derive token IDs, plot ranges, answer lengths, thinking markers and shortest examples from LFM3's tokenizer/data. Mark adaptations with inline LFM3-specific comments. |
+| Continuation scores received another chat template | Encode raw continuations; MMLU scores condition on the exact existing prompt IDs. Match complete answer letters rather than letters inside words. |
+| Top-k sampling scattered along the batch dimension | Scatter along the vocabulary axis; test all rollout samplers with native hybrid caches and greedy/stochastic temperatures. |
+| Masked entropy produced NaNs | Avoid multiplying zero probability by negative infinity; test masked entropy and backward passes. |
+| Single-rollout GRPO had undefined statistics | Validate group size across every variant; exercise distinct/equal rewards, zero advantages, training loops and checkpoint reloads. |
+| Empty distillation inputs produced undefined losses | Validate prompts/targets/evaluation batches; compare single/batched losses and gradients; reduce low-precision probabilities/losses in FP32. |
+| Notebook helper required __file__; exercise fetched an unpublished CSV | Resolve source paths through the package; plot conditional-run metrics only when the user supplies a real log. |
+| Graders evaluated generated Python expressions | Reject strings, attributes, private names and non-arithmetic operators before parsing with restricted constructors and no Python builtins. Payload regressions cannot create files. |
 
 ## Review dimensions
 
-| Dimension | Rating | Evidence |
-| --- | --- | --- |
-| Security | Needs follow-up | The verifier issue above remains; native LFM3 loading uses pinned artifacts, strict state loading and no remote model execution. Hugging Face export deliberately includes the pinned model code. |
-| Performance | Needs workload measurements | The LFM3 cache retains short convolution windows and bounded sliding-attention state. Global attention, full-model optimizer memory and GPU/FSDP throughput still require measurements with the pretrained model. |
-| Correctness | Validated on small configurations | Full/cached and padded/unpadded outputs, state shrinking, supervised and policy-gradient backward passes, checkpoint reloads, reference logits/gradients and Hugging Face round trips pass. |
-| Maintainability | Improved | Chapter loaders share the candidate configuration and tokenization. Appendix C matches the shared implementation. Historical measurements retain their Qwen attribution. |
+| Dimension | Evidence |
+| --- | --- |
+| Correctness | Actual pretrained reference parity, full-weight optimizer/checkpoint/HF round trips, all 19 bounded notebooks and algorithm regressions. |
+| Performance | Measured cache throughput; complete warmups; synchronized timers excluding console work; explicit precision/device settings. |
+| Security | Pinned artifacts, strict native loading, constrained math parsing and fixture-only hosted-service tests. HF export includes pinned official modeling code. Symbolic simplification is not process-isolated and can still be computationally expensive. |
+| Maintainability | Shared loaders/configuration, marked adaptations, Appendix C parity, reproducible notebook runner and validation matrix. |
 
-## Validation boundary
+## Delivery checks
 
-The local suite passes 236 tests with 29 skipped. Separate opt-in tests pass against the pinned reference implementation and tokenizer using small randomly initialized configurations. Lint, spell checking, quote checks, notebook line-length checks, package build/metadata checks and lockfile consistency pass. A one-step Hugging Face Trainer smoke test also updated weights successfully. Full pretrained-weight training, GPU/FSDP execution and new benchmark scores were not run. The original Qwen tests remain to check compatibility of the legacy modules.
-
-No executable Git hooks or `core.hooksPath` override were configured in this checkout. The GitHub workflow matrix includes Linux/macOS/Windows tests, pip installation, old/nightly PyTorch, lint, spell checking and link checking, with a required-checks aggregator. Linux CI runs the pinned LFM3 reference compatibility tests. The real-download workflow also includes them and supports an LFM3-only dispatch.
+No executable Git hooks or core.hooksPath override are configured. Required workflows cover Linux/macOS/Windows, pip installation, old/nightly PyTorch, lint, spelling, links and the required-checks aggregator. Linux additionally checks the pinned reference implementation. Merge only after the latest PR revision passes all applicable workflows.

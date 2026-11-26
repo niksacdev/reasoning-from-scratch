@@ -9,10 +9,7 @@ import time
 
 import requests
 from sympy import simplify
-from sympy.parsing import sympy_parser as spp
 from sympy.core.sympify import SympifyError
-from sympy.polys.polyerrors import PolynomialError
-from tokenize import TokenError
 import torch
 
 from .lfm3 import (
@@ -234,27 +231,9 @@ def normalize_text(text):
 
 
 def sympy_parser(expr):
-    # To avoid crashing on long garbage responses
-    # that some badly trained models (chapter 6) may emit
-    if expr is None or len(expr) > 2000:
-        return None
-    try:
-        return spp.parse_expr(
-            expr,
-            transformations=(
-                # Standard transformations like handling parentheses
-                *spp.standard_transformations,
+    from .safe_math import parse_math_expression
 
-                # Allow omitted multiplication symbols (e.g., "2x" -> 2*x")
-                spp.implicit_multiplication_application,
-            ),
-
-            # Evaluate during parsing so simple constants simplify (e.g., 2+3 -> 5)
-            evaluate=True,
-        )
-    except (SympifyError, SyntaxError, TypeError, AttributeError,
-            IndexError, TokenError, ValueError, PolynomialError):
-        return None
+    return parse_math_expression(expr)
 
 
 def equality_check(expr_gtruth, expr_pred):

@@ -16,6 +16,8 @@ from torch.nn import functional as F
 
 MODEL_ID = "LiquidAI/LFM3-1.7B-Base"
 MODEL_REVISION = "7bca5038823c0d0f14efe06439109354a10e014c"
+# LFM3-specific: the pretrained candidate mixes convolution, sliding, and
+# global attention layers; a Qwen configuration cannot load these weights.
 LFM3_CONFIG_1_7B = {
     "vocab_size": 128_000,
     "context_length": 262_144,
@@ -62,6 +64,7 @@ class KVCache:
     """Store attention (K, V) or a convolution input window per layer."""
 
     def __init__(self, n_layers):
+        # LFM3-specific: convolution windows and attention K/V share a cache.
         self.cache = [None] * n_layers
         self.position = 0
 
@@ -105,6 +108,8 @@ class FeedForward(nn.Module):
 
 
 class ShortConv(nn.Module):
+    # LFM3-specific: gated causal depthwise convolution replaces attention
+    # in 13 of the candidate's 24 layers.
     def __init__(self, cfg):
         super().__init__()
         dim, dtype = cfg["emb_dim"], cfg["dtype"]
@@ -162,7 +167,8 @@ class Attention(nn.Module):
         )
         self.q_norm = RMSNorm(self.head_dim, cfg["norm_eps"], dtype)
         self.k_norm = RMSNorm(self.head_dim, cfg["norm_eps"], dtype)
-        # Global layers rotate half the dimensions, retaining the full-head
+        # LFM3-specific: global layers rotate half the dimensions, retaining
+        # the full-head
         # frequency progression; the remaining frequencies are exactly zero.
         rotated = self.head_dim if self.window else self.head_dim // 2
         base = 10_000.0 if self.window else 1_000_000.0
@@ -314,6 +320,10 @@ class LFM3Model(nn.Module):
         pass
 
     def forward(self, in_idx, cache=None, attn_mask=None):
+        if in_idx.ndim != 2 or not all(in_idx.shape):
+            raise ValueError(
+                "in_idx must be a nonempty [batch, tokens] tensor"
+            )
         start = cache.position if cache is not None else 0
         end = start + in_idx.shape[1]
         if end > self.cfg["context_length"]:
@@ -392,6 +402,7 @@ class LFM3Tokenizer:
         return result
 
     def format_messages(self, messages, add_generation_prompt=True):
+        # LFM3-specific: one BOS, im_start/im_end, and think delimiters.
         text = self.bos_token
         for message in messages:
             role, content = message["role"], message["content"]
@@ -471,6 +482,24 @@ def load_checkpoint(model, path):
     return model
 
 
+def load_pretrained_model(path, device="cpu", cfg=None, dtype=None):
+    """Load weights without first allocating a random 1.7B-parameter model."""
+    # LFM3-specific: source weights are BF16. CPU/MPS default to FP32 for
+    # stable cache comparisons and small optimizer updates. Accelerators with
+    # native BF16 kernels retain BF16; callers can choose dtype explicitly.
+    if dtype is None and torch.device(device).type in ("cpu", "mps"):
+        dtype = torch.float32
+    # LFM3-specific: native names match Liquid AI's safetensors directly.
+    with torch.device("meta"):
+        model = LFM3Model(cfg)
+    model.load_state_dict(load_state_dict_file(path), strict=True, assign=True)
+    # assign=True creates separate Parameter objects for the shared tensors.
+    model.lm_head.weight = model.model.embed_tokens.weight
+    model = model.to(device=device, dtype=dtype)
+    model.cfg["dtype"] = next(model.parameters()).dtype
+    return model.eval()
+
+
 def load_state_dict_file(path, **kwargs):
     """Read either upstream safetensors or a chapter training checkpoint."""
     path = Path(path)
@@ -502,12 +531,13 @@ def load_model_and_tokenizer(
     use_compile=False,
     local_dir="lfm3",
     checkpoint_path=None,
+    dtype=None,
 ):
     tokenizer = load_tokenizer_only(which_model, local_dir)
     if checkpoint_path is None:
         download_lfm3(which_model, out_dir=local_dir)
         checkpoint_path = Path(local_dir) / "model.safetensors"
-    model = load_checkpoint(LFM3Model(), checkpoint_path).to(device).eval()
+    model = load_pretrained_model(checkpoint_path, device=device, dtype=dtype)
     if use_compile:
         model = torch.compile(model)
     return model, tokenizer

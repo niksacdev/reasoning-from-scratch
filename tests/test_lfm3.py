@@ -1,6 +1,7 @@
 """Architecture, cache, padding and training regression tests for the candidate."""
 
 from pathlib import Path
+import os
 
 import pytest
 import torch
@@ -137,3 +138,17 @@ def test_appendix_c_matches_shared_implementation(tiny_cfg):
     appendix_model.load_state_dict(model.state_dict())
     ids = torch.tensor([[1, 2, 3]])
     torch.testing.assert_close(appendix_model(ids), model(ids))
+
+
+@pytest.mark.skipif(os.environ.get("RUN_LFM3_COMPILE_TESTS") != "1",
+                    reason="Opt-in: requires a working local C++ compiler")
+def test_compiled_native_model_generation_with_and_without_cache(tiny_cfg):
+    from reasoning_from_scratch.ch02 import generate_text_basic, generate_text_basic_cache
+
+    torch.manual_seed(123)
+    model = LFM3Model(tiny_cfg).eval()
+    compiled = torch.compile(model)
+    ids = torch.tensor([[2, 3, 4]])
+    expected = generate_text_basic(model, ids, 3)
+    torch.testing.assert_close(generate_text_basic(compiled, ids, 3), expected)
+    torch.testing.assert_close(generate_text_basic_cache(compiled, ids, 3), expected)

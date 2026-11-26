@@ -50,7 +50,7 @@ def calc_next_token_probas(model, tokenizer, prompt, device):
 
     # Get logits and probabilities similar to text generation functions
     logits = model(token_ids.unsqueeze(0)).squeeze(0)
-    all_probas = torch.softmax(logits, dim=-1)
+    all_probas = torch.softmax(logits.float(), dim=-1)
 
     # Positions we score (here: all)
     t_idx = torch.arange(0, token_ids.shape[0] - 1, device=device)
@@ -80,7 +80,7 @@ def calc_next_token_logprobas(model, tokenizer, prompt, device, show=True):
 
     logits = model(token_ids.unsqueeze(0)).squeeze(0)
     # We now use log_softmax
-    all_logprobas = torch.log_softmax(logits, dim=-1)
+    all_logprobas = torch.log_softmax(logits.float(), dim=-1)
 
     t_idx = torch.arange(0, token_ids.shape[0] - 1, device=device)
     next_ids = token_ids[1:]
@@ -101,12 +101,15 @@ def avg_logprob_answer(model, tokenizer, prompt, answer, device="cpu"):
 
     # Encode prompt and answer tokens separately to get the prompt length later
     prompt_ids = tokenizer.encode(prompt)
-    answer_ids = tokenizer.encode(answer)
+    # LFM3-specific: a continuation must not receive another chat template.
+    answer_ids = tokenizer.encode(answer, chat_wrapped=False)
+    if not prompt_ids or not answer_ids:
+        raise ValueError("Prompt and answer must each contain at least one token")
     full_ids = torch.tensor(prompt_ids + answer_ids, device=device)
 
     # Same as in calc_next_token_logprobas before
     logits = model(full_ids.unsqueeze(0)).squeeze(0)
-    logprobs = torch.log_softmax(logits, dim=-1)
+    logprobs = torch.log_softmax(logits.float(), dim=-1)
 
     # Index range for positions corresponding to answer tokens
     start = len(prompt_ids) - 1

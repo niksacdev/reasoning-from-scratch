@@ -74,11 +74,14 @@ def sample_response(
         if temperature and temperature != 1.0:
             logits = logits / temperature
 
-        probas = torch.softmax(logits, dim=-1)
+        probas = torch.softmax(logits.float(), dim=-1)
         probas = top_p_filter(probas, top_p)
-        next_token = torch.multinomial(
-            probas.cpu(), num_samples=1
-        ).to(device)
+        if temperature is None or temperature == 0:
+            next_token = probas.argmax(dim=-1, keepdim=True)
+        else:
+            next_token = torch.multinomial(
+                probas.cpu(), num_samples=1
+            ).to(device)
 
         token_id = next_token.item()
         generated.append(token_id)
@@ -127,6 +130,8 @@ def compute_grpo_loss(
     temperature=0.8,
     top_p=0.9,
 ):
+    if num_rollouts < 2:
+        raise ValueError("GRPO requires at least two rollouts")
     assert num_rollouts >= 2
     roll_logps, roll_rewards, samples = [], [], []
     prompt = render_prompt(example["problem"])
