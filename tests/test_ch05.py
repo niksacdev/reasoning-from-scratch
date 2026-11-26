@@ -14,7 +14,7 @@ class DummyTokenizer:
         self.mapping = mapping or {}
         self.eos_token_id = 0
 
-    def encode(self, text):
+    def encode(self, text, chat_wrapped=None):
         if text in self.mapping:
             return self.mapping[text]
         return [len(text) % 10]

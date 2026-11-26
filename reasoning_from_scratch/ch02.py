@@ -4,6 +4,8 @@
 
 from .lfm3 import KVCache
 import warnings
+import statistics
+import time
 import torch
 
 
@@ -50,7 +52,7 @@ def generate_text_basic(model, token_ids, max_new_tokens, eos_token_id=None):
 
         # Stop if all sequences in the batch have generated EOS
         if (eos_token_id is not None
-                and next_token.item() == eos_token_id):
+                and torch.all(next_token == eos_token_id)):
             break
 
         token_ids = torch.cat([token_ids, next_token], dim=1)
@@ -69,6 +71,8 @@ def generate_text_basic_cache(
     eos_token_id=None
 ):
     input_length = token_ids.shape[1]
+    if max_new_tokens <= 0:
+        return token_ids[:, :0]
     model.eval()
     cache = KVCache(n_layers=model.cfg["n_layers"])
     model.reset_kv_cache()
@@ -79,7 +83,7 @@ def generate_text_basic_cache(
         next_token = torch.argmax(out, dim=-1, keepdim=True)
 
         if (eos_token_id is not None
-                and next_token.item() == eos_token_id):
+                and torch.all(next_token == eos_token_id)):
             break
 
         generated_tokens.append(next_token)
@@ -120,6 +124,8 @@ def generate_text_basic_stream_cache(
     max_new_tokens,
     eos_token_id=None
 ):
+    if max_new_tokens <= 0:
+        return
     # input_length = token_ids.shape[1]
     model.eval()
     cache = KVCache(n_layers=model.cfg["n_layers"])
@@ -141,6 +147,54 @@ def generate_text_basic_stream_cache(
     # return token_ids[:, input_length:]
 
 
+def synchronize_device(device):
+    """Finish accelerator work before starting or stopping a timer."""
+    backend = getattr(torch, torch.device(device).type, None)
+    if backend is not None and hasattr(backend, "synchronize"):
+        backend.synchronize()
+
+
+def benchmark_generation(model, token_ids, max_new_tokens=64, repeats=3):
+    """Compare equal greedy workloads, excluding decoding and console I/O.
+
+    Warm up each path with the complete workload, synchronize accelerators,
+    and report median wall time. EOS is disabled so token counts match.
+    Speedups depend on sequence length, dtype, device, and backend kernels.
+    """
+    if max_new_tokens < 1 or repeats < 1:
+        raise ValueError("Token budget and repeats must be positive")
+    results = {}
+    outputs = {}
+    for name, generate in (
+        ("uncached", generate_text_basic),
+        ("cached", generate_text_basic_cache),
+    ):
+        generate(model, token_ids, max_new_tokens)  # Full-workload warmup
+        durations = []
+        for _ in range(repeats):
+            synchronize_device(token_ids.device)
+            start = time.perf_counter()
+            output = generate(model, token_ids, max_new_tokens)
+            synchronize_device(token_ids.device)
+            durations.append(time.perf_counter() - start)
+        seconds = statistics.median(durations)
+        outputs[name] = output
+        results[name] = {
+            "seconds": seconds,
+            "tokens_per_second": output.numel() / seconds,
+            "timings": durations,
+        }
+    results["identical_tokens"] = torch.equal(
+        outputs["uncached"], outputs["cached"]
+    )
+    results["speedup"] = (
+        results["uncached"]["seconds"] / results["cached"]["seconds"]
+    )
+    results["device"] = str(token_ids.device)
+    results["dtype"] = str(next(model.parameters()).dtype)
+    return results
+
+
 def _print_peak_memory_stats(device):
     device = torch.device(device)
     backend = getattr(torch, device.type, None)
@@ -156,6 +210,8 @@ def _print_peak_memory_stats(device):
         except TypeError:
             sync_fn()
 
+    if not hasattr(backend, "max_memory_allocated"):
+        return
     try:
         max_mem_bytes = backend.max_memory_allocated(device=device)
     except TypeError:
@@ -174,6 +230,8 @@ def generate_stats(output_token_ids, tokenizer, start_time,
                    end_time):
     # tokenizer is currently unused but retained for backward compatibility
     total_time = end_time - start_time
+    if total_time <= 0:
+        raise ValueError("Generation timing must have positive duration")
     print(f"\n\nTime: {total_time:.2f} sec")
     print(f"{int(output_token_ids.numel() / total_time)} tokens/sec")
 

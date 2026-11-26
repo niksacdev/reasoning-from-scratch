@@ -1,4 +1,4 @@
-from reasoning_from_scratch.lfm3 import load_state_dict_file
+from reasoning_from_scratch.lfm3 import load_pretrained_model
 # Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt)
 # Source for "Build a Reasoning Model (From Scratch)": https://mng.bz/lZ5B
 # Code repository: https://github.com/rasbt/reasoning-from-scratch
@@ -30,7 +30,7 @@ from reasoning_from_scratch.ch04 import top_p_filter
 from reasoning_from_scratch.ch06 import (
     load_math_train,
 )
-from reasoning_from_scratch.lfm3 import KVCache, LFM3Model, LFM3_CONFIG_1_7B
+from reasoning_from_scratch.lfm3 import KVCache
 
 SCRIPT_NAME = Path(__file__).stem
 LOG_PATH = Path(__file__).parent / "logs" / f"{SCRIPT_NAME}_outputs.txt"
@@ -99,9 +99,12 @@ def sample_responses_batched(
         if temperature and temperature != 1.0:
             step_logits = step_logits / temperature
 
-        probas = torch.softmax(step_logits, dim=-1)
+        probas = torch.softmax(step_logits.float(), dim=-1)
         probas = top_p_filter(probas, top_p)
-        next_token = torch.multinomial(probas, num_samples=1)
+        if temperature is None or temperature == 0:
+            next_token = probas.argmax(dim=-1, keepdim=True)
+        else:
+            next_token = torch.multinomial(probas, num_samples=1)
 
         eos_tok = next_token.new_full((batch_size, 1), eos_id)
         next_token = torch.where(
@@ -167,6 +170,8 @@ def compute_grpo_loss(
     top_p=0.9,
     skip_zero_adv=False,
 ):
+    if num_rollouts < 2:
+        raise ValueError("GRPO requires at least two rollouts")
     roll_rewards, samples, rollout_data = [], [], []
     prompt = render_prompt(example["problem"])
 
@@ -446,9 +451,8 @@ def main_worker(rank, world_size, args):
 
         if args.checkpoint_path:
             tokenizer = load_tokenizer_only(which_model="base")
-            model = LFM3Model(LFM3_CONFIG_1_7B)
-            state_dict = load_state_dict_file(args.checkpoint_path, map_location="cpu")
-            model.load_state_dict(state_dict)
+            # LFM3-specific: native checkpoint names and shared embedding weights.
+            model = load_pretrained_model(args.checkpoint_path, device=device)
             target_dtype = model.cfg["dtype"]
             model = model.to(device=device, dtype=target_dtype)
         else:

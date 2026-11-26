@@ -98,6 +98,8 @@ def filter_examples_by_max_len(examples, max_len=2048):
 def compute_example_loss(model, example, device):
     token_ids = example["token_ids"]
     prompt_len = example["prompt_len"]
+    if not 1 <= prompt_len < len(token_ids):
+        raise ValueError("Example requires a nonempty prompt and answer")
 
     input_ids = torch.tensor(
         token_ids[:-1], dtype=torch.long, device=device
@@ -116,6 +118,8 @@ def compute_example_loss(model, example, device):
 
 @torch.no_grad()
 def evaluate_examples(model, examples, device):
+    if not examples:
+        raise ValueError("Evaluation requires at least one example")
     was_training = model.training
     model.eval()
     total_loss = 0.0

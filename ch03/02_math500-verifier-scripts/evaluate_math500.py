@@ -1,4 +1,4 @@
-from reasoning_from_scratch.lfm3 import load_state_dict_file
+from reasoning_from_scratch.lfm3 import load_pretrained_model
 # Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt)
 # Source for "Build a Reasoning Model (From Scratch)": https://mng.bz/lZ5B
 # Code repository: https://github.com/rasbt/reasoning-from-scratch
@@ -6,10 +6,6 @@ from reasoning_from_scratch.lfm3 import load_state_dict_file
 import argparse
 import torch
 
-from reasoning_from_scratch.lfm3 import (
-    LFM3Model,
-    LFM3_CONFIG_1_7B
-)
 from reasoning_from_scratch.ch02 import get_device
 from reasoning_from_scratch.ch03 import (
     load_math500_test,
@@ -92,10 +88,8 @@ if __name__ == "__main__":
     if args.checkpoint_path:
         # To load the saved RL checkpoint files from chapter 6
         tokenizer = load_tokenizer_only(which_model=which_model)
-        model = LFM3Model(LFM3_CONFIG_1_7B)
-        state_dict = load_state_dict_file(args.checkpoint_path, map_location="cpu")
-        model.load_state_dict(state_dict)
-        model.to(device)
+        # LFM3-specific: native checkpoint names and shared embedding weights.
+        model = load_pretrained_model(args.checkpoint_path, device=device)
         if args.compile:
             torch._dynamo.config.allow_unspec_int_on_nn_module = True
             model = torch.compile(model)

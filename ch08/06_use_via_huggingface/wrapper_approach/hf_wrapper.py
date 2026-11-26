@@ -1,4 +1,4 @@
-from reasoning_from_scratch.lfm3 import load_state_dict_file
+from reasoning_from_scratch.lfm3 import load_pretrained_model
 # Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt)
 # Source for "Build a Reasoning Model (From Scratch)": https://mng.bz/lZ5B
 # Code repository: https://github.com/rasbt/reasoning-from-scratch
@@ -129,7 +129,7 @@ class LFM3LocalWrapperForCausalLM(PreTrainedModel, GenerationMixin):
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
             loss = torch.nn.functional.cross_entropy(
-                shift_logits.view(-1, shift_logits.size(-1)),
+                shift_logits.float().view(-1, shift_logits.size(-1)),
                 shift_labels.view(-1),
                 ignore_index=-100,
             )
@@ -200,19 +200,17 @@ def build_model(
     else:
         model_path = Path(model_path)
 
-    try:
-        state_dict = load_state_dict_file(model_path, map_location="cpu", weights_only=True)
-    except TypeError:
-        state_dict = load_state_dict_file(model_path, map_location="cpu")
-
+    # LFM3-specific: share the strict native loader and its device/dtype rules.
+    native = load_pretrained_model(model_path, cfg=LFM3_CONFIG_1_7B)
     config = LFM3LocalWrapperConfig(
-        lfm3_cfg=LFM3_CONFIG_1_7B,
+        lfm3_cfg=native.cfg,
         tokenizer_kind=tokenizer_kind,
         pad_token_id=tokenizer.pad_token_id,
         eos_token_id=tokenizer.eos_token_id,
     )
-    model = LFM3LocalWrapperForCausalLM(config)
-    model.model.load_state_dict(state_dict)
+    with torch.device("meta"):
+        model = LFM3LocalWrapperForCausalLM(config)
+    model.model = native
     return model
 
 

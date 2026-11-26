@@ -1,4 +1,4 @@
-from reasoning_from_scratch.lfm3 import load_state_dict_file
+from reasoning_from_scratch.lfm3 import load_pretrained_model
 # Copyright (c) Sebastian Raschka under Apache License 2.0 (see LICENSE.txt)
 # Source for "Build a Reasoning Model (From Scratch)": https://mng.bz/lZ5B
 # Code repository: https://github.com/rasbt/reasoning-from-scratch
@@ -25,7 +25,7 @@ from reasoning_from_scratch.ch04 import top_p_filter
 from reasoning_from_scratch.ch06 import (
     load_math_train,
 )
-from reasoning_from_scratch.lfm3 import KVCache, LFM3Model, LFM3_CONFIG_1_7B
+from reasoning_from_scratch.lfm3 import KVCache
 
 SCRIPT_NAME = Path(__file__).stem
 LOG_PATH = Path(__file__).parent / "logs" / f"{SCRIPT_NAME}_outputs.txt"
@@ -60,13 +60,13 @@ def sample_response(
         if temperature and temperature != 1.0:
             logits = logits / temperature
 
-        probas = torch.softmax(logits, dim=-1)
+        probas = torch.softmax(logits.float(), dim=-1)
         probas = top_p_filter(probas, top_p)
         if top_k and top_k > 0:
             top_k = min(top_k, probas.numel())
             topk_vals, topk_idx = torch.topk(probas, top_k)
             mask = torch.zeros_like(probas, dtype=torch.bool)
-            mask.scatter_(0, topk_idx, True)
+            mask.scatter_(-1, topk_idx, True)
             probas = probas * mask
         # (11) Keep sampling mask for top-p (DeepSeek V3.2)
 
@@ -76,7 +76,10 @@ def sample_response(
             probas = probas / probas_sum
         else:
             mask = torch.ones_like(probas, dtype=torch.bool)
-        next_token = torch.multinomial(probas, num_samples=1)
+        if temperature is None or temperature == 0:
+            next_token = probas.argmax(dim=-1, keepdim=True)
+        else:
+            next_token = torch.multinomial(probas, num_samples=1)
 
         token_id = next_token.item()
         generated.append(token_id)
@@ -133,7 +136,10 @@ def sequence_logprob_and_entropy(model, token_ids, prompt_len, keep_masks=None, 
         entropy_all_steps = logp_all_steps.new_tensor(0.0)
     else:
         all_answer_probs = torch.exp(all_answer_logprobs)
-        plogp = all_answer_probs * all_answer_logprobs
+        safe_logprobs = all_answer_logprobs.masked_fill(
+            ~torch.isfinite(all_answer_logprobs), 0.0
+        )
+        plogp = all_answer_probs * safe_logprobs
         step_entropy = -torch.sum(plogp, dim=-1)
         entropy_all_steps = torch.mean(step_entropy)
     return logp_all_steps, entropy_all_steps
@@ -166,6 +172,8 @@ def compute_grpo_loss_plus_kl(
     off_policy_delta=0.1,
     skip_zero_adv=False,
 ):
+    if num_rollouts < 2:
+        raise ValueError("GRPO requires at least two rollouts")
     if kl_coeff and ref_model is None:
         raise ValueError("ref_model must be provided when kl_coeff is non-zero.")
     if old_model is None:
@@ -656,10 +664,8 @@ if __name__ == "__main__":
     math_data = load_math_train()
     if args.checkpoint_path:
         tokenizer = load_tokenizer_only(which_model="base")
-        model = LFM3Model(LFM3_CONFIG_1_7B)
-        state_dict = load_state_dict_file(args.checkpoint_path, map_location="cpu")
-        model.load_state_dict(state_dict)
-        model.to(device)
+        # LFM3-specific: native checkpoint names and shared embedding weights.
+        model = load_pretrained_model(args.checkpoint_path, device=device)
     else:
         model, tokenizer = load_model_and_tokenizer(
             which_model="base", device=device, use_compile=False

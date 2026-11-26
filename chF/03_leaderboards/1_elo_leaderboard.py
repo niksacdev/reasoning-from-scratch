@@ -27,7 +27,7 @@ def main():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description="Compute Elo leaderboard."
     )
-    parser.add_argument("--path", type=str, help="Path to votes JSON")
+    parser.add_argument("--path", type=str, required=True, help="Path to votes JSON")
     parser.add_argument("--k", type=int, default=32,
                         help="Elo k-factor")
     parser.add_argument("--init", type=int, default=1000,

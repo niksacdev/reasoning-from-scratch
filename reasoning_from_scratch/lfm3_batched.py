@@ -6,41 +6,6 @@ from .lfm3 import KVCache, LFM3Model as LFM3Model, LFM3Tokenizer as LFM3Tokenize
 from .lfm3 import download_lfm3 as download_lfm3, load_checkpoint as load_checkpoint
 from .lfm3 import load_model_and_tokenizer as _load_model_and_tokenizer
 
-def compute_rope_params(head_dim, theta_base=10_000, context_length=4096, dtype=torch.float32):
-    assert head_dim % 2 == 0, "Embedding dimension must be even"
-
-    # Compute the inverse frequencies
-    inv_freq = 1.0 / (theta_base ** (torch.arange(0, head_dim, 2, dtype=dtype)[: (head_dim // 2)].float() / head_dim))
-
-    # Generate position indices
-    positions = torch.arange(context_length, dtype=dtype)
-
-    # Compute the angles
-    angles = positions[:, None] * inv_freq[None, :]  # Shape: (context_length, head_dim // 2)
-
-    # Expand angles to match the head_dim
-    angles = torch.cat([angles, angles], dim=1)  # Shape: (context_length, head_dim)
-
-    # Precompute sine and cosine
-    cos = torch.cos(angles)
-    sin = torch.sin(angles)
-
-    return cos, sin
-
-
-def apply_rope_with_pos_ids(x, cos, sin, pos_ids):
-    B, H, L, D = x.shape
-    cos_sel = cos[pos_ids]  # (B, L, D)
-    sin_sel = sin[pos_ids]  # (B, L, D)
-    cos_sel = cos_sel.unsqueeze(1)  # (B, 1, L, D)
-    sin_sel = sin_sel.unsqueeze(1)  # (B, 1, L, D)
-    x1 = x[..., : D // 2]
-    x2 = x[..., D // 2:]
-    rotated = torch.cat((-x2, x1), dim=-1)
-    x_rotated = (x * cos_sel) + (rotated * sin_sel)
-    return x_rotated.to(dtype=x.dtype)
-
-
 @torch.inference_mode()
 def generate_text_basic_batched_cache(
     model,
@@ -50,6 +15,8 @@ def generate_text_basic_batched_cache(
     attn_mask=None,
     pad_id=None,
 ):
+    if max_new_tokens <= 0:
+        return token_ids[:, :0]
     device = token_ids.device
     model.eval()
 
@@ -117,6 +84,8 @@ def generate_text_basic_batched_stream_cache(
     attn_mask=None,
     pad_id=None,
 ):
+    if max_new_tokens <= 0:
+        return token_ids[:, :0]
     device = token_ids.device
     model.eval()
 
@@ -156,6 +125,7 @@ def generate_text_basic_batched_stream_cache(
 
 
 def shrink_kv_cache_inplace(cache, keep_mask, n_layers):
+    # LFM3-specific: shrink both attention K/V and convolution history.
     keep_mask = keep_mask.bool()
     for i in range(n_layers):
         state = cache.get(i)
@@ -181,6 +151,8 @@ def generate_text_basic_batched_cache_stop(
     I.e., finished rows that see an EOS written don't
     participate in forward pass anymore.
     """
+    if max_new_tokens <= 0:
+        return token_ids[:, :0]
     device = token_ids.device
     model.eval()
 
@@ -274,6 +246,8 @@ def generate_text_basic_batched_stream_cache_stop(
     Same as generate_text_basic_batched_stream_cache but
     with per-sequence early stop.
     """
+    if max_new_tokens <= 0:
+        return token_ids[:, :0]
     device = token_ids.device
     model.eval()
 

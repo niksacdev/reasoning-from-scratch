@@ -4,27 +4,27 @@
 # Code repository: https://github.com/rasbt/reasoning-from-scratch
 
 from reasoning_from_scratch.ch02 import generate_text_basic_stream_cache
+import re
 
 
 def predict_choice(
     model, tokenizer, prompt_fmt, max_new_tokens=8
 ):
-    pred = None
+    generated = []
     for t in generate_text_basic_stream_cache(
         model=model,
         token_ids=prompt_fmt,
         max_new_tokens=max_new_tokens,
         eos_token_id=tokenizer.eos_token_id,
     ):
-        answer = tokenizer.decode(t.squeeze(0).tolist())
-        for letter in answer:
-            letter = letter.upper()
-            if letter in "ABCD":
-                pred = letter
-                break
-        if pred:  # stop as soon as a letter appears
-            break
-    return pred
+        generated.extend(t.squeeze(0).tolist())
+    # Decode together: a token containing "Answer" is not the choice "A".
+    answer = tokenizer.decode(generated)
+    match = re.search(
+        r"(?:^|\banswer\s*:)\s*\(?([ABCD])(?=\s|[).]|$)",
+        answer, flags=re.IGNORECASE,
+    )
+    return match.group(1).upper() if match else None
 
 
 def elo_ratings(vote_pairs, k_factor=32, initial_rating=1000):

@@ -32,17 +32,17 @@ def common_prefix_len(a, b):
 
 
 def first_new_token_id(tokenizer, prompt, prompt_ids, continuation):
-    ids_full = tokenizer.encode(prompt + continuation)
-    j = common_prefix_len(ids_full, prompt_ids)
-    if j >= len(ids_full):
+    # LFM3-specific: encode an unwrapped continuation of the existing prompt.
+    continuation_ids = tokenizer.encode(continuation, chat_wrapped=False)
+    if not continuation_ids:
         raise ValueError("Continuation produced no new tokens.")
-    return ids_full[j]
+    return continuation_ids[0]
 
 
 def predict_choice_logprobs(model, tokenizer, prompt_fmt, prompt, prompt_ids, example):
     with torch.no_grad():
         logits = model(prompt_fmt)  # [1, T, V]
-        next_logp = torch.log_softmax(logits[0, -1], dim=-1)
+        next_logp = torch.log_softmax(logits[0, -1].float(), dim=-1)
 
     scores = {}
     for letter in "ABCD":

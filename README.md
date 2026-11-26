@@ -12,6 +12,8 @@ The PyTorch implementation includes LFM3's convolution, sliding attention and gl
 
 The model weights use the LFM Open License v1.0. The repository's Apache-2.0 license covers its code. Legacy Qwen modules remain importable for compatibility, but chapter entry points use LFM3.
 
+See the [validation report](LFM3_VALIDATION.md) for full-weight reference comparisons, cache measurements, notebook execution, training/checkpoint checks, and explicit test boundaries.
+
 ---
 
 # Build A Reasoning Model (From Scratch)
