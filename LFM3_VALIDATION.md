@@ -52,7 +52,7 @@ The base model can give wrong or incomplete math answers before fine-tuning. The
 
 All **19 notebooks** passed bounded execution, producing **21 rendered plots**. Executed copies retain source and outputs; tracked notebooks keep clean outputs. Caps: eight generated tokens, two samples/rollouts, one training step/epoch/example, short synthetic arithmetic data. Three live-Ollama cells are recorded as skipped. Historical CSV plots retain their Qwen attribution; the missing conditional-run CSV is not fabricated.
 
-The local repository suite passed **434 tests**, with **32 explicitly skipped**. Skips include opt-in full-weight/reference/compiler checks, services and legacy large-Qwen downloads. LFM3 pretrained/reference/compiler checks ran separately. See [the review findings](CODE_REVIEW.md).
+The local repository suite passed **439 tests**, with **32 explicitly skipped**. Skips include opt-in full-weight/reference/compiler checks, services and legacy large-Qwen downloads. LFM3 pretrained/reference/compiler checks ran separately. See [the review findings](CODE_REVIEW.md).
 
 ## Reproduce
 

@@ -10,6 +10,8 @@ from reasoning_from_scratch.ch02 import get_device
 
 
 def bradley_terry_torch(vote_pairs, device):
+    if not vote_pairs:
+        return {}
 
     # Collect all unique model names
     models = sorted({m for winner, loser in vote_pairs for m in (winner, loser)})
@@ -17,8 +19,8 @@ def bradley_terry_torch(vote_pairs, device):
     idx = {m: i for i, m in enumerate(models)}
 
     # Convert to index tensors
-    winners = torch.tensor([idx[winner] for winner, _ in vote_pairs], dtype=torch.long)
-    losers = torch.tensor([idx[loser] for _, loser in vote_pairs], dtype=torch.long)
+    winners = torch.tensor([idx[winner] for winner, _ in vote_pairs], dtype=torch.long, device=device)
+    losers = torch.tensor([idx[loser] for _, loser in vote_pairs], dtype=torch.long, device=device)
 
     # Learnable parameters
     theta = torch.nn.Parameter(torch.zeros(n - 1, device=device))
@@ -48,7 +50,7 @@ def bradley_terry_torch(vote_pairs, device):
 
 def main():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter, description="Bradley-Terry leaderboard.")
-    parser.add_argument("--path", type=str, help="Path to votes JSON")
+    parser.add_argument("--path", type=str, required=True, help="Path to votes JSON")
     args = parser.parse_args()
 
     with open(args.path, "r", encoding="utf-8") as f:

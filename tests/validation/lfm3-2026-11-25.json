@@ -6,7 +6,7 @@
   "python": "3.14.9",
   "torch": "2.10.0",
   "default_suite": {
-    "passed": 434,
+    "passed": 439,
     "skipped": 32
   },
   "full_weight_suite": {
@@ -584,5 +584,10 @@
     "No multi-GPU FSDP or CUDA/XPU",
     "No live Chainlit browser or hosted teacher calls",
     "CPU Inductor checked on a small model; GPU compilation not measured"
-  ]
+  ],
+  "supplemental_leaderboard_clis": {
+    "elo": "passed",
+    "bradley_terry_mps": "passed",
+    "missing_input": "argparse error instead of traceback"
+  }
 }
