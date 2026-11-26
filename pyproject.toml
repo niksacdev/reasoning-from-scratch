@@ -24,6 +24,7 @@ requires-python = ">=3.10,<3.15"
 
 dependencies = [
     "jupyterlab>=4.4.7",
+    "ipywidgets>=8.1.7,<9",  # Notebook progress bars used by tqdm
     "torch>=2.10,<3",  # 2.10.0 is the version originally used in the book
     "tokenizers>=0.21.2",
     "huggingface-hub>=1.0",
